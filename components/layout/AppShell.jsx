@@ -54,6 +54,7 @@ export function AppShell({ session, children }) {
         :root {
           --shell-gutter: 32px;
           --shell-gutter-mobile: 16px;
+          --bottom-nav-height: 64px;
         }
 
         .app-shell {
@@ -99,7 +100,8 @@ export function AppShell({ session, children }) {
           }
 
           .main-content {
-            padding: 20px var(--shell-gutter-mobile) 40px;
+            padding: 8px var(--shell-gutter-mobile)
+              calc(var(--bottom-nav-height) + env(safe-area-inset-bottom, 0px) + 20px);
           }
         }
       `}</style>

@@ -108,7 +108,7 @@ export function BookingPageClient({ session }) {
 
         <div className="booking-card-body">
           <div className="two-col">
-            <form className="card" style={{ padding: 22 }} onSubmit={handleSubmit}>
+            <form className="card booking-form-card" onSubmit={handleSubmit}>
               {error ? <div className="alert alert-error">{error}</div> : null}
               {success ? <div className="alert alert-success">{success}</div> : null}
 
@@ -168,7 +168,7 @@ export function BookingPageClient({ session }) {
               </button>
             </form>
 
-            <div className="card" style={{ padding: 22 }}>
+            <div className="card booking-list-card">
               <h3 style={{ marginTop: 0, fontSize: 14, fontWeight: 700 }}>
                 {t.dashboard.subtitle}
               </h3>
@@ -249,6 +249,55 @@ export function BookingPageClient({ session }) {
           flex: 1;
           overflow-y: auto;
           padding: 20px;
+        }
+
+        .booking-form-card,
+        .booking-list-card {
+          padding: 22px;
+        }
+
+        @media (max-width: 860px) {
+          .booking-page-fill {
+            position: static;
+            inset: auto;
+            display: block;
+          }
+
+          .booking-card {
+            flex: none;
+            min-height: 0;
+            border-radius: 16px;
+          }
+
+          .booking-card-header {
+            padding: 16px 16px 12px;
+          }
+
+          .booking-card-body {
+            flex: none;
+            overflow-y: visible;
+            padding: 16px;
+          }
+
+          .two-col {
+            display: flex;
+            flex-direction: column;
+            gap: 0;
+          }
+
+          .card.booking-form-card,
+          .card.booking-list-card {
+            border: none;
+            box-shadow: none;
+            border-radius: 0;
+            padding: 0;
+          }
+
+          .booking-form-card {
+            padding-bottom: 20px;
+            margin-bottom: 20px;
+            border-bottom: 1px solid var(--color-line);
+          }
         }
       `}</style>
     </div>

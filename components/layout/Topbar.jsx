@@ -82,6 +82,7 @@ export function Topbar({ session, onRequestLogin }) {
           display: flex;
           align-items: center;
           justify-content: space-between;
+          gap: 14px;
           padding: 0 32px 0 0;
           position: sticky;
           top: 0;
@@ -92,6 +93,8 @@ export function Topbar({ session, onRequestLogin }) {
           display: flex;
           align-items: center;
           gap: 10px;
+          min-width: 0;
+          flex: 1;
         }
 
         .search-pill {
@@ -148,6 +151,7 @@ export function Topbar({ session, onRequestLogin }) {
           display: flex;
           align-items: center;
           gap: 14px;
+          flex-shrink: 0;
         }
 
         .lang-toggle {
@@ -159,6 +163,7 @@ export function Topbar({ session, onRequestLogin }) {
           background: var(--color-surface);
           height: 38px;
           padding: 3px;
+          flex-shrink: 0;
         }
 
         .lang-toggle-indicator {
@@ -201,7 +206,30 @@ export function Topbar({ session, onRequestLogin }) {
 
         @media (max-width: 860px) {
           .topbar {
-            padding: 0 16px 0 0;
+            padding: 0 16px;
+            gap: 10px;
+          }
+
+          .search-pill {
+            min-width: 0;
+            flex: 1;
+            padding: 0 14px;
+          }
+
+          .topbar-identity-text {
+            display: none;
+          }
+        }
+
+        @media (max-width: 480px) {
+          .search-pill {
+            width: 38px;
+            padding: 0;
+            justify-content: center;
+          }
+
+          .search-pill span {
+            display: none;
           }
         }
       `}</style>

@@ -100,6 +100,8 @@ export function BookingModal({ date, initialStart, session, t, locale, onClose, 
         onClick={(e) => e.stopPropagation()}
         onSubmit={handleSubmit}
       >
+        <div className="modal-drag-handle" aria-hidden="true" />
+
         <h2 className="modal-title">{t.common.book}</h2>
         <p className="modal-subtitle">{formatDateLong(date, locale)}</p>
 
@@ -188,6 +190,93 @@ export function BookingModal({ date, initialStart, session, t, locale, onClose, 
             {submitting ? t.common.loading : t.common.confirm}
           </button>
         </div>
+
+        <style jsx>{`
+          .modal-actions :global(.btn) {
+            border-radius: 999px;
+          }
+
+          .modal-drag-handle {
+            display: none;
+          }
+
+          @media (max-width: 860px) {
+            .modal-overlay {
+              align-items: flex-end;
+              justify-content: center;
+              padding: 0;
+              z-index: 100;
+            }
+
+            .modal {
+              position: fixed;
+              left: 0;
+              right: 0;
+              bottom: 0;
+              width: 100%;
+              max-width: 100%;
+              max-height: 88vh;
+              overflow-y: auto;
+              border-radius: 20px 20px 0 0;
+              margin: 0;
+              padding-bottom: calc(20px + env(safe-area-inset-bottom, 0px));
+              animation: sheet-slide-up 220ms ease-out;
+            }
+
+            .modal-drag-handle {
+              display: block;
+              width: 40px;
+              height: 4px;
+              border-radius: 999px;
+              background: var(--color-line-strong);
+              margin: 0 auto 10px;
+            }
+
+            .modal-title {
+              margin-bottom: 2px;
+            }
+
+            .modal-subtitle {
+              margin-bottom: 14px;
+            }
+
+            .form-label {
+              margin-bottom: 4px;
+            }
+
+            .form-field {
+              margin-bottom: 12px;
+            }
+
+            .form-row {
+              margin-bottom: 12px;
+              gap: 10px;
+            }
+
+            .textarea {
+              min-height: 72px;
+            }
+
+            .modal-actions {
+              margin-top: 4px;
+            }
+          }
+
+          @keyframes sheet-slide-up {
+            from {
+              transform: translateY(100%);
+            }
+            to {
+              transform: translateY(0);
+            }
+          }
+
+          @media (prefers-reduced-motion: reduce) {
+            .modal {
+              animation: none;
+            }
+          }
+        `}</style>
       </form>
     </div>
   );

@@ -222,6 +222,41 @@ export function OrdersClient({ session }) {
         .orders-modal-btn {
           border-radius: 999px;
         }
+
+        @media (max-width: 860px) {
+          .orders-page-fill {
+            position: static;
+            inset: auto;
+            display: block;
+          }
+
+          .orders-card {
+            flex: none;
+            min-height: 0;
+            border-radius: 16px;
+          }
+
+          .orders-card-header {
+            padding: 16px 16px 12px;
+          }
+
+          .orders-card-body {
+            flex: none;
+            overflow-y: visible;
+            padding: 16px;
+          }
+
+          .table-wrap {
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            margin: 0 -16px;
+            padding: 0 16px;
+          }
+
+          .table {
+            min-width: 640px;
+          }
+        }
       `}</style>
     </div>
   );

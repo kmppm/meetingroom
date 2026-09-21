@@ -81,7 +81,7 @@ export function ScheduleGrid({ date, bookings, onSlotClick, t }) {
                   className="schedule-slot booked"
                   style={{ borderLeftColor: unitMeta?.color }}
                 >
-                  <span>
+                  <span className="schedule-slot-label">
                     {seg.booking.purpose || t.common.booked}
                   </span>
                   <span
@@ -106,7 +106,7 @@ export function ScheduleGrid({ date, bookings, onSlotClick, t }) {
                 disabled={past}
                 onClick={() => onSlotClick(minutesToTime(seg.startMinutes))}
               >
-                <span>{t.common.available}</span>
+                <span className="schedule-slot-label">{t.common.available}</span>
               </button>
             </div>
           );
@@ -166,6 +166,10 @@ export function ScheduleGrid({ date, bookings, onSlotClick, t }) {
           cursor: default;
         }
 
+        .schedule-slot-label {
+          min-width: 0;
+        }
+
         .schedule-slot.free {
           cursor: pointer;
           color: var(--color-ink-soft);
@@ -204,7 +208,30 @@ export function ScheduleGrid({ date, bookings, onSlotClick, t }) {
 
         @media (max-width: 860px) {
           .schedule-row {
-            grid-template-columns: 92px 1fr;
+            grid-template-columns: 84px 1fr;
+          }
+
+          .schedule-time {
+            margin: 8px 6px;
+            padding: 3px 6px;
+            font-size: 10px;
+          }
+
+          .schedule-slot {
+            padding: 8px 10px;
+            gap: 6px;
+          }
+
+          .schedule-slot-label {
+            flex: 1;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+          }
+
+          .slot-unit-badge {
+            font-size: 10px;
+            padding: 2px 8px;
           }
         }
       `}</style>

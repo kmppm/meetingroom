@@ -22,18 +22,21 @@ export function Sidebar({ session, t, onRequestLogin }) {
     {
       href: "/dashboard",
       label: t.nav.dashboard,
+      mobileLabel: "Home",
       icon: IconlyCategory,
       requiresAuth: false,
     },
     {
       href: "/booking",
       label: t.nav.booking,
+      mobileLabel: "Pesan",
       icon: IconlyCalendar,
       requiresAuth: true,
     },
     {
       href: "/my-orders",
       label: session?.role === "admin" ? t.nav.allOrders : t.nav.myOrders,
+      mobileLabel: "Saya",
       icon: IconlyPaper,
       requiresAuth: true,
     },
@@ -62,7 +65,10 @@ export function Sidebar({ session, t, onRequestLogin }) {
               onClick={handleClick}
             >
               <Icon size={ICON_SIZE} color="currentColor" />
-              <span>{item.label}</span>
+              <span className="sidebar-link-label">{item.label}</span>
+              <span className="sidebar-link-label-mobile">
+                {item.mobileLabel}
+              </span>
             </Link>
           );
         })}
@@ -146,6 +152,10 @@ export function Sidebar({ session, t, onRequestLogin }) {
           flex-shrink: 0;
         }
 
+        .sidebar-link-label-mobile {
+          display: none;
+        }
+
         .sidebar-footer {
           padding: 14px 10px;
         }
@@ -188,29 +198,89 @@ export function Sidebar({ session, t, onRequestLogin }) {
 
         @media (max-width: 860px) {
           .sidebar {
-            position: static;
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            top: auto;
             width: 100%;
             height: auto;
             flex-direction: row;
-            align-items: center;
+            align-items: stretch;
             border-right: none;
-            border-bottom: 1px solid var(--color-line);
+            border-top: 1px solid var(--color-line);
+            background: var(--color-surface, #ffffff);
+            opacity: 1;
+            backdrop-filter: none;
+            padding-bottom: env(safe-area-inset-bottom, 0px);
+            z-index: 50;
+            box-shadow: 0 -2px 16px rgba(0, 0, 0, 0.12);
           }
 
           .sidebar-brand {
-            border-bottom: none;
-            padding: 14px 16px;
+            display: none;
           }
 
           .sidebar-nav {
+            flex: 1;
             flex-direction: row;
-            padding: 8px;
-            overflow-x: auto;
+            padding: 6px 4px;
+            gap: 2px;
+          }
+
+          .sidebar-link {
+            flex: 1;
+            flex-direction: column;
+            justify-content: center;
+            gap: 2px;
+            padding: 6px 2px;
+            font-size: 11px;
+            text-align: center;
+          }
+
+          .sidebar-link.active {
+            background: transparent;
+            color: var(--color-sidebar-active-mobile, #111827);
+            font-weight: 700;
+          }
+
+          .sidebar-link:hover {
+            background: transparent;
+          }
+
+          .sidebar-link-label {
+            display: none;
+          }
+
+          .sidebar-link-label-mobile {
+            display: block;
+          }
+
+          .sidebar-link span {
+            font-size: 11px;
+            line-height: 1.1;
           }
 
           .sidebar-footer {
+            flex-shrink: 0;
             border-top: none;
-            padding: 8px 12px 8px 0;
+            padding: 6px 4px;
+            display: flex;
+          }
+
+          .sidebar-logout {
+            flex-direction: column;
+            justify-content: center;
+            gap: 2px;
+            width: auto;
+            padding: 6px 10px;
+            font-size: 11px;
+            text-align: center;
+          }
+
+          .sidebar-logout span {
+            font-size: 11px;
+            line-height: 1.1;
           }
         }
       `}</style>

@@ -124,6 +124,30 @@ export function DashboardClient({ session }) {
           overflow-y: auto;
           padding: 20px;
         }
+
+        @media (max-width: 860px) {
+          .dashboard-page-fill {
+            position: static;
+            inset: auto;
+            display: block;
+          }
+
+          .dashboard-card {
+            flex: none;
+            min-height: 0;
+            border-radius: 16px;
+          }
+
+          .dashboard-card-header {
+            padding: 16px 16px 12px;
+          }
+
+          .dashboard-card-body {
+            flex: none;
+            overflow-y: visible;
+            padding: 16px;
+          }
+        }
       `}</style>
     </div>
   );
