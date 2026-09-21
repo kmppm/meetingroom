@@ -283,6 +283,7 @@ export function BookingPageClient({ session }) {
             display: flex;
             flex-direction: column;
             gap: 0;
+            align-items: stretch;
           }
 
           .card.booking-form-card,
