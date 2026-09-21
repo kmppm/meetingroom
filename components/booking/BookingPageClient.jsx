@@ -139,7 +139,7 @@ export function BookingPageClient({ session }) {
                   <TimeSelect
                     value={startTime}
                     onChange={handleStartTimeChange}
-                    placeholder="-- Jam mulai --"
+                    placeholder="Jam mulai"
                   />
                 </div>
                 <div className="form-field">
@@ -148,7 +148,7 @@ export function BookingPageClient({ session }) {
                     value={endTime}
                     onChange={setEndTime}
                     minTime={startTime}
-                    placeholder="-- Jam selesai --"
+                    placeholder="Jam selesai"
                   />
                 </div>
               </div>
