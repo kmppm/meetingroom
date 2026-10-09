@@ -10,6 +10,12 @@ import { BookingModal } from "@/components/booking/BookingModal";
 import { RESOURCES, DEFAULT_RESOURCE } from "@/lib/resources";
 import { todayISO } from "@/lib/time";
 
+// Nama pendek khusus tampilan mobile, mis. "Ruangan Meeting Sadiman" -> "Ruangan Sadiman"
+function shortResourceName(name) {
+  const words = name.trim().split(/\s+/);
+  return words.length > 2 ? `${words[0]} ${words[words.length - 1]}` : name;
+}
+
 export function DashboardClient({ session }) {
   const { t, locale } = useLanguage();
   const requestLogin = useLoginModal();
@@ -72,9 +78,13 @@ export function DashboardClient({ session }) {
                   className={`btn resource-btn ${
                     resource === r.code ? "btn-primary" : "btn-secondary"
                   }`}
+                  aria-label={r.name}
                   onClick={() => setResource(r.code)}
                 >
-                  {r.name}
+                  <span className="resource-name-full">{r.name}</span>
+                  <span className="resource-name-short" aria-hidden="true">
+                    {shortResourceName(r.name)}
+                  </span>
                 </button>
               ))}
             </div>
@@ -173,27 +183,104 @@ export function DashboardClient({ session }) {
           padding: 20px;
         }
 
+        .resource-name-short {
+          display: none;
+        }
+
         @media (max-width: 860px) {
+          /* Card tetap diam setinggi area antara topbar dan bottom nav,
+             hanya .dashboard-card-body yang discroll. */
           .dashboard-page-fill {
-            position: static;
-            inset: auto;
-            display: block;
+            top: 8px;
+            left: var(--shell-gutter-mobile);
+            right: var(--shell-gutter-mobile);
+            bottom: calc(
+              var(--bottom-nav-height) + env(safe-area-inset-bottom, 0px) + 12px
+            );
           }
 
           .dashboard-card {
-            flex: none;
-            min-height: 0;
             border-radius: 16px;
           }
 
           .dashboard-card-header {
-            padding: 16px 16px 12px;
+            padding: 12px 14px;
+          }
+
+          .dashboard-card-header .page-header {
+            margin-bottom: 8px;
+          }
+
+          .dashboard-card-header .page-title {
+            font-size: 18px;
+            margin: 0;
+          }
+
+          .dashboard-card-header .page-subtitle {
+            display: none;
+          }
+
+          .dashboard-toolbar {
+            gap: 8px;
+            margin-top: 0;
+          }
+
+          .dashboard-resource-tabs {
+            flex-wrap: nowrap;
+            width: 100%;
+            gap: 6px;
+          }
+
+          .dashboard-toolbar .resource-btn {
+            flex: 1 1 0;
+            min-width: 0;
+            height: 36px;
+            padding: 0 8px;
+            font-size: 13px;
+            line-height: 1;
+            white-space: nowrap;
+          }
+
+          /* Semua kapsul kontrol tanggal disamakan dengan tombol ruangan (36px) */
+          .dashboard-page-fill .dashboard-card-header .date-nav {
+            gap: 8px;
+          }
+
+          .dashboard-page-fill .dashboard-card-header .date-nav button,
+          .dashboard-page-fill .dashboard-card-header .date-nav input {
+            height: 36px;
+            min-height: 36px;
+            padding-top: 0;
+            padding-bottom: 0;
+            font-size: 13px;
+            line-height: 1;
+            border-radius: 999px;
+          }
+
+          /* Tombol panah kiri/kanan: lingkaran 36x36 */
+          .dashboard-page-fill .dashboard-card-header .date-nav button:has(svg) {
+            width: 36px;
+            min-width: 36px;
+            padding: 0;
+          }
+
+          .dashboard-page-fill .dashboard-card-header .date-nav input {
+            padding-left: 12px;
+            padding-right: 12px;
+          }
+
+          .resource-name-full {
+            display: none;
+          }
+
+          .resource-name-short {
+            display: inline;
           }
 
           .dashboard-card-body {
-            flex: none;
-            overflow-y: visible;
-            padding: 16px;
+            padding: 12px;
+            -webkit-overflow-scrolling: touch;
+            overscroll-behavior: contain;
           }
         }
       `}</style>

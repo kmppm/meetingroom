@@ -8,6 +8,12 @@ import { UNITS, getUnitMeta } from "@/lib/units";
 import { RESOURCES, DEFAULT_RESOURCE, getResourceMeta } from "@/lib/resources";
 import { todayISO } from "@/lib/time";
 
+// Nama pendek khusus tampilan mobile, mis. "Ruangan Meeting Sadiman" -> "Ruangan Sadiman"
+function shortResourceName(name) {
+  const words = name.trim().split(/\s+/);
+  return words.length > 2 ? `${words[0]} ${words[words.length - 1]}` : name;
+}
+
 export function BookingPageClient({ session }) {
   const { t, locale } = useLanguage();
   const isEn = locale === "en";
@@ -262,9 +268,13 @@ export function BookingPageClient({ session }) {
                     className={`btn booked-tab ${
                       viewResource === r.code ? "btn-primary" : "btn-secondary"
                     }`}
+                    aria-label={r.name}
                     onClick={() => handleTabClick(r.code)}
                   >
-                    {r.name}
+                    <span className="booked-name-full">{r.name}</span>
+                    <span className="booked-name-short" aria-hidden="true">
+                      {shortResourceName(r.name)}
+                    </span>
                   </button>
                 ))}
               </div>
@@ -361,6 +371,10 @@ export function BookingPageClient({ session }) {
           border-radius: 999px;
         }
 
+        .booked-name-short {
+          display: none;
+        }
+
         .booked-list {
           list-style: none;
           padding: 0;
@@ -411,26 +425,73 @@ export function BookingPageClient({ session }) {
         }
 
         @media (max-width: 860px) {
+          /* Card tetap diam setinggi area antara topbar dan bottom nav,
+             hanya .booking-card-body yang discroll. */
           .booking-page-fill {
-            position: static;
-            inset: auto;
-            display: block;
+            top: 8px;
+            left: var(--shell-gutter-mobile);
+            right: var(--shell-gutter-mobile);
+            bottom: calc(
+              var(--bottom-nav-height) + env(safe-area-inset-bottom, 0px) + 12px
+            );
           }
 
           .booking-card {
-            flex: none;
-            min-height: 0;
             border-radius: 16px;
           }
 
           .booking-card-header {
-            padding: 16px 16px 12px;
+            padding: 12px 14px;
+          }
+
+          .booking-card-header .page-header {
+            margin-bottom: 8px;
+          }
+
+          .booking-card-header .page-title {
+            font-size: 18px;
+            margin: 0;
+          }
+
+          .booking-card-header .page-subtitle {
+            display: none;
+          }
+
+          /* Kontrol tanggal: semua kapsul 36px, sama dengan halaman Dashboard */
+          .booking-page-fill .booking-card-header .date-nav {
+            gap: 8px;
+          }
+
+          .booking-page-fill .booking-card-header .date-nav-label {
+            display: none;
+          }
+
+          .booking-page-fill .booking-card-header .date-nav button,
+          .booking-page-fill .booking-card-header .date-nav input {
+            height: 36px;
+            min-height: 36px;
+            padding-top: 0;
+            padding-bottom: 0;
+            font-size: 13px;
+            line-height: 1;
+            border-radius: 999px;
+          }
+
+          .booking-page-fill .booking-card-header .date-nav button:has(svg) {
+            width: 36px;
+            min-width: 36px;
+            padding: 0;
+          }
+
+          .booking-page-fill .booking-card-header .date-nav input {
+            padding-left: 12px;
+            padding-right: 12px;
           }
 
           .booking-card-body {
-            flex: none;
-            overflow-y: visible;
             padding: 16px;
+            -webkit-overflow-scrolling: touch;
+            overscroll-behavior: contain;
           }
 
           .two-col {
@@ -452,6 +513,30 @@ export function BookingPageClient({ session }) {
             padding-bottom: 20px;
             margin-bottom: 20px;
             border-bottom: 1px solid var(--color-line);
+          }
+
+          /* Tab "Jadwal yang sudah dipesan": satu baris, nama pendek, 36px */
+          .booked-tabs {
+            flex-wrap: nowrap;
+            gap: 6px;
+          }
+
+          .booked-tabs .booked-tab {
+            flex: 1 1 0;
+            min-width: 0;
+            height: 36px;
+            padding: 0 8px;
+            font-size: 13px;
+            line-height: 1;
+            white-space: nowrap;
+          }
+
+          .booked-name-full {
+            display: none;
+          }
+
+          .booked-name-short {
+            display: inline;
           }
         }
       `}</style>

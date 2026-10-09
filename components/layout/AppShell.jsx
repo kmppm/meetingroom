@@ -54,6 +54,7 @@ export function AppShell({ session, children }) {
         :root {
           --shell-gutter: 32px;
           --shell-gutter-mobile: 16px;
+          /* Area yang dipakai kapsul nav di bawah: 52px tinggi + 12px jarak bawah */
           --bottom-nav-height: 64px;
         }
 
@@ -97,6 +98,15 @@ export function AppShell({ session, children }) {
         @media (max-width: 860px) {
           .app-shell {
             flex-direction: column;
+            min-height: 100vh;
+            min-height: 100dvh;
+          }
+
+          /* dvh supaya tinggi tidak melompat saat address bar browser
+             naik/turun, dan card tidak tertutup bottom nav. */
+          .content-area {
+            height: 100vh;
+            height: 100dvh;
           }
 
           .main-content {

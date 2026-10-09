@@ -197,43 +197,49 @@ export function Sidebar({ session, t, onRequestLogin }) {
         }
 
         @media (max-width: 860px) {
+          /* Kapsul melayang: ada jarak ke bawah dan ke kiri/kanan layar */
           .sidebar {
             position: fixed;
-            bottom: 0;
-            left: 0;
-            right: 0;
             top: auto;
-            width: 100%;
-            height: auto;
+            left: var(--shell-gutter-mobile);
+            right: var(--shell-gutter-mobile);
+            bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+            width: auto;
+            height: 52px;
             flex-direction: row;
             align-items: stretch;
-            border-right: none;
-            border-top: 1px solid var(--color-line);
+            border: 1px solid var(--color-line);
+            border-radius: 999px;
             background: var(--color-surface, #ffffff);
             opacity: 1;
             backdrop-filter: none;
-            padding-bottom: env(safe-area-inset-bottom, 0px);
+            padding: 0 8px;
             z-index: 50;
-            box-shadow: 0 -2px 16px rgba(0, 0, 0, 0.12);
           }
 
           .sidebar-brand {
             display: none;
           }
 
+          /* 3 menu + logout = 4 kolom dengan lebar yang sama persis */
           .sidebar-nav {
-            flex: 1;
+            flex: 3 1 0;
+            min-width: 0;
             flex-direction: row;
-            padding: 6px 4px;
-            gap: 2px;
+            align-items: stretch;
+            padding: 0;
+            gap: 0;
           }
 
           .sidebar-link {
-            flex: 1;
+            flex: 1 1 0;
+            min-width: 0;
             flex-direction: column;
+            align-items: center;
             justify-content: center;
-            gap: 2px;
-            padding: 6px 2px;
+            gap: 3px;
+            padding: 0;
+            border-radius: 999px;
             font-size: 11px;
             text-align: center;
           }
@@ -262,20 +268,33 @@ export function Sidebar({ session, t, onRequestLogin }) {
           }
 
           .sidebar-footer {
-            flex-shrink: 0;
+            flex: 1 1 0;
+            min-width: 0;
             border-top: none;
-            padding: 6px 4px;
+            padding: 0;
             display: flex;
+            align-items: stretch;
           }
 
           .sidebar-logout {
+            flex: 1 1 0;
+            min-width: 0;
             flex-direction: column;
+            align-items: center;
             justify-content: center;
-            gap: 2px;
-            width: auto;
-            padding: 6px 10px;
+            gap: 3px;
+            width: 100%;
+            padding: 0;
+            border-radius: 999px;
             font-size: 11px;
             text-align: center;
+          }
+
+          /* Ukuran icon seragam untuk semua item */
+          .sidebar-link svg,
+          .sidebar-logout svg {
+            width: 22px;
+            height: 22px;
           }
 
           .sidebar-logout span {

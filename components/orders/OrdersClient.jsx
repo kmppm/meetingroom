@@ -231,26 +231,46 @@ export function OrdersClient({ session }) {
         }
 
         @media (max-width: 860px) {
+          /* Card tetap diam setinggi area antara topbar dan bottom nav,
+             hanya .orders-card-body yang discroll. */
           .orders-page-fill {
-            position: static;
-            inset: auto;
-            display: block;
+            top: 8px;
+            left: var(--shell-gutter-mobile);
+            right: var(--shell-gutter-mobile);
+            bottom: calc(
+              var(--bottom-nav-height) + env(safe-area-inset-bottom, 0px) + 12px
+            );
           }
 
           .orders-card {
-            flex: none;
-            min-height: 0;
             border-radius: 16px;
           }
 
           .orders-card-header {
-            padding: 16px 16px 12px;
+            padding: 12px 14px;
+          }
+
+          .orders-card-header .page-header {
+            margin-bottom: 0;
+          }
+
+          .orders-card-header .page-title {
+            font-size: 18px;
+            margin: 0;
+          }
+
+          .orders-card-header .page-subtitle {
+            display: none;
+          }
+
+          .orders-card-header .alert {
+            margin: 8px 0 0;
           }
 
           .orders-card-body {
-            flex: none;
-            overflow-y: visible;
             padding: 16px;
+            -webkit-overflow-scrolling: touch;
+            overscroll-behavior: contain;
           }
 
           /* ---------- Table -> stacked cards on mobile ---------- */
