@@ -2,11 +2,46 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { UNITS } from "@/lib/units";
 import { useLanguage } from "./LanguageProvider";
+
+function EyeIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z" />
+      <circle cx="12" cy="12" r="3" />
+    </svg>
+  );
+}
+
+function EyeOffIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M17.94 17.94A10.5 10.5 0 0 1 12 19C5.5 19 2 12 2 12a18.5 18.5 0 0 1 5.06-5.94" />
+      <path d="M9.9 4.24A9.8 9.8 0 0 1 12 4c6.5 0 10 8 10 8a18.6 18.6 0 0 1-2.16 3.19" />
+      <path d="M14.12 14.12A3 3 0 1 1 9.88 9.88" />
+      <line x1="2" y1="2" x2="22" y2="22" />
+    </svg>
+  );
+}
+
+function ChevronIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <polyline points="6 9 12 15 18 9" />
+    </svg>
+  );
+}
 
 export function LoginForm({ onSuccess, onClose }) {
   const { t, locale, toggleLocale } = useLanguage();
   const router = useRouter();
+  const isId = locale === "id";
+
+  // "username" berisi kode unit yang dipilih dari dropdown (bukan teks yang diketik).
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -43,299 +78,340 @@ export function LoginForm({ onSuccess, onClose }) {
     }
   }
 
-  if (isModal) {
-    return (
-      <div className="login-modal-card">
-        <button
-          type="button"
-          className="login-modal-dismiss"
-          onClick={onClose}
-          aria-label="Close"
-        >
-          ×
-        </button>
+  const form = (
+    <form className="lf-form" onSubmit={handleSubmit}>
+      <div className="lf-header">
+        <h1 className="lf-title">{t.login.title}</h1>
+        <p className="lf-subtitle">{t.login.subtitle}</p>
+      </div>
 
-        <form className="login-modal-form" onSubmit={handleSubmit}>
-          <div className="login-modal-header">
-            <h1 className="login-modal-title">{t.login.title}</h1>
-            <p className="login-modal-subtitle">{t.login.subtitle}</p>
-          </div>
-
-          <div className="login-modal-fields">
-            <input
-              type="text"
+      <div className="lf-fields">
+        <div className="lf-field">
+          <label className="lf-label" htmlFor="lf-unit">
+            Unit
+          </label>
+          <div className="lf-select-wrap">
+            <select
+              id="lf-unit"
               required
-              placeholder={t.login.username}
               value={username}
               onChange={(e) => setUsername(e.target.value)}
-              className="login-modal-input"
-              autoComplete="username"
-            />
+              className="lf-control lf-select"
+            >
+              <option value="" disabled>
+                {isId ? "Pilih unit" : "Select unit"}
+              </option>
+              {Object.values(UNITS).map((u) => (
+                <option key={u.code} value={u.code}>
+                  {u.name}
+                </option>
+              ))}
+            </select>
+            <span className="lf-chevron">
+              <ChevronIcon />
+            </span>
+          </div>
+        </div>
 
-            <div className="login-modal-password-wrap">
-              <input
-                type={showPassword ? "text" : "password"}
-                required
-                placeholder={t.login.password}
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="login-modal-input login-modal-input-password"
-                autoComplete="current-password"
-              />
+        <div className="lf-field">
+          <label className="lf-label" htmlFor="lf-password">
+            {t.login.password}
+          </label>
+          <div className="lf-password-wrap">
+            <input
+              id="lf-password"
+              type={showPassword ? "text" : "password"}
+              required
+              placeholder={t.login.password}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="lf-control lf-control-password"
+              autoComplete="current-password"
+            />
+            <button
+              type="button"
+              className="lf-eye"
+              onClick={() => setShowPassword((v) => !v)}
+              aria-label={
+                showPassword
+                  ? isId ? "Sembunyikan password" : "Hide password"
+                  : isId ? "Tampilkan password" : "Show password"
+              }
+              title={
+                showPassword
+                  ? isId ? "Sembunyikan password" : "Hide password"
+                  : isId ? "Tampilkan password" : "Show password"
+              }
+            >
+              {showPassword ? <EyeOffIcon /> : <EyeIcon />}
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {error ? (
+        <p className="lf-alert" role="alert">
+          {error}
+        </p>
+      ) : null}
+
+      <button type="submit" disabled={submitting} className="lf-submit">
+        {submitting ? t.common.loading : t.login.submit}
+      </button>
+
+      <p className="lf-help">
+        {isId ? "Mengalami kendala masuk?" : "Having trouble signing in?"}
+      </p>
+    </form>
+  );
+
+  return (
+    <>
+      {isModal ? (
+        <div className="login-modal-card">
+          <button
+            type="button"
+            className="login-modal-dismiss"
+            onClick={onClose}
+            aria-label="Close"
+          >
+            ×
+          </button>
+          {form}
+        </div>
+      ) : (
+        <div className="login-page">
+          <div style={{ position: "absolute", top: 20, right: 20 }}>
+            <div className="lang-toggle">
               <button
                 type="button"
-                onClick={() => setShowPassword((v) => !v)}
-                className="login-modal-toggle-visibility"
+                className={locale === "id" ? "active" : ""}
+                onClick={() => locale !== "id" && toggleLocale()}
               >
-                {showPassword
-                  ? locale === "id"
-                    ? "Sembunyikan"
-                    : "Hide"
-                  : locale === "id"
-                  ? "Tampilkan"
-                  : "Show"}
+                ID
+              </button>
+              <button
+                type="button"
+                className={locale === "en" ? "active" : ""}
+                onClick={() => locale !== "en" && toggleLocale()}
+              >
+                EN
               </button>
             </div>
           </div>
 
-          <p className="login-modal-help">
-            {locale === "id"
-              ? "Mengalami kendala masuk?"
-              : "Having trouble signing in?"}
-          </p>
-
-          {error ? <p className="login-modal-alert">{error}</p> : null}
-
-          <button
-            type="submit"
-            disabled={submitting}
-            className="login-modal-submit"
-          >
-            {submitting ? t.common.loading : t.login.submit}
-          </button>
-
-        </form>
-
-        <style jsx global>{`
-          .login-modal-card {
-            position: relative;
-            background: #ffffff;
-            border: 1px solid #e2e8f0;
-            border-radius: 24px;
-            padding: 32px;
-            box-shadow: 0 10px 40px rgba(15, 23, 42, 0.12);
-          }
-
-          .login-modal-dismiss {
-            position: absolute;
-            top: 16px;
-            right: 16px;
-            width: 28px;
-            height: 28px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border: none;
-            background: transparent;
-            border-radius: 50%;
-            font-size: 18px;
-            line-height: 1;
-            cursor: pointer;
-            color: #94a3b8;
-            transition: background-color 120ms ease, color 120ms ease;
-          }
-
-          .login-modal-dismiss:hover {
-            background: #f1f5f9;
-            color: #0f172a;
-          }
-
-          .login-modal-form {
-            display: flex;
-            flex-direction: column;
-          }
-
-          .login-modal-header {
-            text-align: center;
-          }
-
-          .login-modal-title {
-            font-size: 24px;
-            font-weight: 700;
-            letter-spacing: -0.01em;
-            color: #0f172a;
-            margin: 0;
-          }
-
-          .login-modal-subtitle {
-            margin-top: 8px;
-            font-size: 14px;
-            line-height: 1.6;
-            color: #94a3b8;
-          }
-
-          .login-modal-fields {
-            margin-top: 32px;
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-          }
-
-          .login-modal-input {
-            width: 100%;
-            border: 1px solid #e2e8f0;
-            border-radius: 8px;
-            background: transparent;
-            padding: 12px 16px;
-            font-size: 14px;
-            color: #0f172a;
-            outline: none;
-            box-sizing: border-box;
-            transition: border-color 120ms ease;
-          }
-
-          .login-modal-input::placeholder {
-            color: #94a3b8;
-          }
-
-          .login-modal-input:focus {
-            border-color: #94a3b8;
-          }
-
-          .login-modal-password-wrap {
-            position: relative;
-          }
-
-          .login-modal-input-password {
-            padding-right: 64px;
-          }
-
-          .login-modal-toggle-visibility {
-            position: absolute;
-            right: 16px;
-            top: 50%;
-            transform: translateY(-50%);
-            border: none;
-            background: transparent;
-            font-size: 12px;
-            font-weight: 500;
-            color: #94a3b8;
-            cursor: pointer;
-          }
-
-          .login-modal-toggle-visibility:hover {
-            color: #0f172a;
-          }
-
-          .login-modal-help {
-            margin-top: 12px;
-            font-size: 12px;
-            font-weight: 500;
-            color: #94a3b8;
-          }
-
-          .login-modal-alert {
-            margin-top: 12px;
-            border-radius: 8px;
-            background: #fef2f2;
-            padding: 10px 14px;
-            font-size: 12px;
-            color: #dc2626;
-          }
-
-          .login-modal-submit {
-            margin-top: 20px;
-            width: 100%;
-            border: none;
-            border-radius: 8px;
-            background: #bcd7f6;
-            padding: 12px;
-            font-size: 14px;
-            font-weight: 600;
-            color: #0f172a;
-            cursor: pointer;
-            transition: opacity 120ms ease;
-          }
-
-          .login-modal-submit:hover {
-            opacity: 0.9;
-          }
-
-          .login-modal-submit:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-          }
-        `}</style>
-      </div>
-    );
-  }
-
-  return (
-    <div className="login-page">
-      <div style={{ position: "absolute", top: 20, right: 20 }}>
-        <div className="lang-toggle">
-          <button
-            type="button"
-            className={locale === "id" ? "active" : ""}
-            onClick={() => locale !== "id" && toggleLocale()}
-          >
-            ID
-          </button>
-          <button
-            type="button"
-            className={locale === "en" ? "active" : ""}
-            onClick={() => locale !== "en" && toggleLocale()}
-          >
-            EN
-          </button>
+          <div className="card login-card">
+            <div className="login-brand" />
+            {form}
+          </div>
         </div>
-      </div>
+      )}
 
-      <form className="card login-card" onSubmit={handleSubmit}>
-        <div className="login-brand" />
-        <h1 className="login-title">{t.login.title}</h1>
-        <p className="login-subtitle">{t.login.subtitle}</p>
+      <style jsx global>{`
+        /* ---------- Kartu modal ---------- */
+        .login-modal-card {
+          position: relative;
+          background: #ffffff;
+          border: 1px solid #e2e8f0;
+          border-radius: 24px;
+          padding: 36px 32px 28px;
+          box-shadow: 0 10px 40px rgba(15, 23, 42, 0.12);
+        }
 
-        {error ? <div className="alert alert-error">{error}</div> : null}
+        .login-modal-dismiss {
+          position: absolute;
+          top: 16px;
+          right: 16px;
+          width: 28px;
+          height: 28px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          border: none;
+          background: transparent;
+          border-radius: 50%;
+          font-size: 18px;
+          line-height: 1;
+          cursor: pointer;
+          color: #94a3b8;
+          transition: background-color 120ms ease, color 120ms ease;
+        }
 
-        <div className="form-field">
-          <label className="form-label" htmlFor="username">
-            {t.login.username}
-          </label>
-          <input
-            id="username"
-            className="input"
-            type="text"
-            autoComplete="username"
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
-            required
-          />
-        </div>
+        .login-modal-dismiss:hover {
+          background: #f1f5f9;
+          color: #0f172a;
+        }
 
-        <div className="form-field">
-          <label className="form-label" htmlFor="password">
-            {t.login.password}
-          </label>
-          <input
-            id="password"
-            className="input"
-            type="password"
-            autoComplete="current-password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-          />
-        </div>
+        /* ---------- Form (dipakai modal & halaman /login) ---------- */
+        .lf-form {
+          display: flex;
+          flex-direction: column;
+        }
 
-        <button
-          className="btn btn-primary btn-block"
-          type="submit"
-          disabled={submitting}
-        >
-          {submitting ? t.common.loading : t.login.submit}
-        </button>
-      </form>
-    </div>
+        .lf-header {
+          text-align: center;
+        }
+
+        .lf-title {
+          margin: 0;
+          font-size: 24px;
+          font-weight: 700;
+          letter-spacing: -0.01em;
+          color: #0f172a;
+        }
+
+        .lf-subtitle {
+          margin: 8px 0 0;
+          font-size: 14px;
+          line-height: 1.6;
+          color: #64748b;
+        }
+
+        .lf-fields {
+          margin-top: 28px;
+          display: flex;
+          flex-direction: column;
+          gap: 16px;
+        }
+
+        .lf-label {
+          display: block;
+          margin-bottom: 6px;
+          font-size: 13px;
+          font-weight: 600;
+          color: #0f172a;
+        }
+
+        /* Semua kolom (dropdown & password) berukuran sama */
+        .lf-control {
+          display: block;
+          width: 100%;
+          height: 48px;
+          padding: 0 16px;
+          box-sizing: border-box;
+          border: 1px solid #e2e8f0;
+          border-radius: 10px;
+          background-color: #ffffff;
+          font-family: inherit;
+          font-size: 14px;
+          color: #0f172a;
+          outline: none;
+          transition: border-color 120ms ease, box-shadow 120ms ease;
+        }
+
+        .lf-control::placeholder {
+          color: #94a3b8;
+        }
+
+        .lf-control:focus {
+          border-color: #0f172a;
+          box-shadow: 0 0 0 3px rgba(15, 23, 42, 0.08);
+        }
+
+        .lf-select-wrap {
+          position: relative;
+        }
+
+        .lf-select {
+          appearance: none;
+          -webkit-appearance: none;
+          cursor: pointer;
+          padding-right: 44px;
+        }
+
+        .lf-chevron {
+          position: absolute;
+          top: 50%;
+          right: 16px;
+          transform: translateY(-50%);
+          display: flex;
+          color: #94a3b8;
+          pointer-events: none;
+        }
+
+        /* Abu-abu selama belum ada unit yang dipilih */
+        .lf-select:invalid {
+          color: #94a3b8;
+        }
+
+        .lf-select option {
+          color: #0f172a;
+        }
+
+        .lf-password-wrap {
+          position: relative;
+        }
+
+        .lf-control-password {
+          padding-right: 48px;
+        }
+
+        /* Ikon mata di dalam kolom password, sisi kanan */
+        .lf-eye {
+          position: absolute;
+          top: 50%;
+          right: 8px;
+          transform: translateY(-50%);
+          width: 34px;
+          height: 34px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          border: none;
+          border-radius: 8px;
+          background: transparent;
+          color: #94a3b8;
+          cursor: pointer;
+          transition: color 120ms ease, background-color 120ms ease;
+        }
+
+        .lf-eye:hover {
+          color: #0f172a;
+          background: #f1f5f9;
+        }
+
+        .lf-alert {
+          margin: 16px 0 0;
+          border-radius: 10px;
+          background: #fef2f2;
+          padding: 10px 14px;
+          font-size: 13px;
+          color: #dc2626;
+        }
+
+        /* Tombol masuk: hitam, ukuran sama dengan kolom password */
+        .lf-submit {
+          margin-top: 20px;
+          width: 100%;
+          height: 48px;
+          border: none;
+          border-radius: 10px;
+          background: #111111;
+          font-family: inherit;
+          font-size: 14px;
+          font-weight: 600;
+          color: #ffffff;
+          cursor: pointer;
+          transition: background-color 120ms ease, opacity 120ms ease;
+        }
+
+        .lf-submit:hover {
+          background: #000000;
+        }
+
+        .lf-submit:disabled {
+          opacity: 0.5;
+          cursor: not-allowed;
+        }
+
+        .lf-help {
+          margin: 14px 0 0;
+          text-align: center;
+          font-size: 12px;
+          font-weight: 500;
+          color: #94a3b8;
+        }
+      `}</style>
+    </>
   );
 }

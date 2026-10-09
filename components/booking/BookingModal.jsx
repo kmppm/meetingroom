@@ -1,47 +1,29 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { UNITS } from "@/lib/units";
+import { RESOURCES, DEFAULT_RESOURCE, getResourceMeta } from "@/lib/resources";
+import { TimeSlotPicker } from "@/components/booking/TimeSlotPicker";
 import {
-  ROOM_OPEN_MINUTES,
   ROOM_CLOSE_MINUTES,
   formatDateLong,
   minutesToTime,
   timeToMinutes,
 } from "@/lib/time";
 
-// Step waktu khusus untuk dropdown di modal booking ini — sengaja dipisah dari
-// SLOT_STEP_MINUTES (yang dipakai grid dashboard), supaya orang tetap bisa booking
-// per 30 menit walaupun tampilan grid di dashboard per 1 jam.
-const BOOKING_STEP_MINUTES = 30;
+// resource (opsional): resource yang dipilih awal. Kalau tidak dikirim, default ke Sadiman.
+export function BookingModal({
+  date,
+  initialStart,
+  resource: initialResource,
+  session,
+  t,
+  locale,
+  onClose,
+  onCreated,
+}) {
+  const isEn = locale === "en";
 
-// Opsi "Start time": semua titik awal per 30 menit, mis. 06:00, 06:30, ..., 19:30
-const START_TIME_OPTIONS = (() => {
-  const options = [];
-  for (
-    let m = ROOM_OPEN_MINUTES;
-    m < ROOM_CLOSE_MINUTES;
-    m += BOOKING_STEP_MINUTES
-  ) {
-    options.push(minutesToTime(m));
-  }
-  return options;
-})();
-
-// Opsi "End time": satu langkah 30 menit setelah tiap slot, sampai jam tutup, mis. 06:30, ..., 20:00
-const END_TIME_OPTIONS = (() => {
-  const options = [];
-  for (
-    let m = ROOM_OPEN_MINUTES + BOOKING_STEP_MINUTES;
-    m <= ROOM_CLOSE_MINUTES;
-    m += BOOKING_STEP_MINUTES
-  ) {
-    options.push(minutesToTime(m));
-  }
-  return options;
-})();
-
-export function BookingModal({ date, initialStart, session, t, locale, onClose, onCreated }) {
   const defaultEndMinutes = Math.min(
     timeToMinutes(initialStart) + 60,
     ROOM_CLOSE_MINUTES
@@ -50,9 +32,49 @@ export function BookingModal({ date, initialStart, session, t, locale, onClose, 
   const [startTime, setStartTime] = useState(initialStart);
   const [endTime, setEndTime] = useState(minutesToTime(defaultEndMinutes));
   const [purpose, setPurpose] = useState("");
+  const [resource, setResource] = useState(initialResource || DEFAULT_RESOURCE);
   const [unit, setUnit] = useState(session.role === "admin" ? "" : session.unit);
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
+
+  // Semua booking di tanggal ini, dipakai untuk menyembunyikan jam yang sudah terpesan.
+  // Diambil sendiri oleh modal supaya tetap benar walau ruangan diganti di dalam modal.
+  const [dayBookings, setDayBookings] = useState([]);
+
+  useEffect(() => {
+    let cancelled = false;
+    async function load() {
+      try {
+        const res = await fetch(`/api/bookings?date=${date}`);
+        const data = await res.json();
+        if (!cancelled) setDayBookings(res.ok ? data.bookings : []);
+      } catch (err) {
+        if (!cancelled) setDayBookings([]);
+      }
+    }
+    load();
+    return () => {
+      cancelled = true;
+    };
+  }, [date]);
+
+  const resourceBookings = dayBookings.filter(
+    (b) => getResourceMeta(b.resource).code === resource
+  );
+
+  function handleResourceChange(code) {
+    setResource(code);
+    // Ketersediaan jam beda per ruangan, jadi pilihan jam direset.
+    setStartTime("");
+    setEndTime("");
+  }
+
+  function handleStartTimeChange(newStart) {
+    setStartTime(newStart);
+    if (endTime && endTime <= newStart) {
+      setEndTime("");
+    }
+  }
 
   async function handleSubmit(e) {
     e.preventDefault();
@@ -60,6 +82,10 @@ export function BookingModal({ date, initialStart, session, t, locale, onClose, 
 
     if (session.role === "admin" && !unit) {
       setError(t.common.selectUnit);
+      return;
+    }
+    if (!startTime || !endTime) {
+      setError(t.errors.validation);
       return;
     }
 
@@ -73,6 +99,7 @@ export function BookingModal({ date, initialStart, session, t, locale, onClose, 
           startTime,
           endTime,
           purpose,
+          resource,
           unit: session.role === "admin" ? unit : undefined,
         }),
       });
@@ -107,6 +134,24 @@ export function BookingModal({ date, initialStart, session, t, locale, onClose, 
 
         {error ? <div className="alert alert-error">{error}</div> : null}
 
+        <div className="form-field">
+          <label className="form-label">
+            {isEn ? "Room / Table" : "Ruangan / Meja"}
+          </label>
+          <select
+            className="select"
+            value={resource}
+            onChange={(e) => handleResourceChange(e.target.value)}
+            required
+          >
+            {Object.values(RESOURCES).map((r) => (
+              <option key={r.code} value={r.code}>
+                {r.name}
+              </option>
+            ))}
+          </select>
+        </div>
+
         {session.role === "admin" ? (
           <div className="form-field">
             <label className="form-label">{t.common.selectUnit}</label>
@@ -128,43 +173,21 @@ export function BookingModal({ date, initialStart, session, t, locale, onClose, 
           </div>
         ) : null}
 
-        <div className="form-row">
-          <div className="form-field">
-            <label className="form-label">{t.common.startTime}</label>
-            <select
-              className="select"
-              value={startTime}
-              onChange={(e) => setStartTime(e.target.value)}
-              required
-            >
-              <option value="" disabled>
-                -- {t.common.startTime} --
-              </option>
-              {START_TIME_OPTIONS.map((time) => (
-                <option key={time} value={time}>
-                  {time}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div className="form-field">
-            <label className="form-label">{t.common.endTime}</label>
-            <select
-              className="select"
-              value={endTime}
-              onChange={(e) => setEndTime(e.target.value)}
-              required
-            >
-              <option value="" disabled>
-                -- {t.common.endTime} --
-              </option>
-              {END_TIME_OPTIONS.map((time) => (
-                <option key={time} value={time}>
-                  {time}
-                </option>
-              ))}
-            </select>
-          </div>
+        <div className="form-field">
+          <label className="form-label">{isEn ? "Time" : "Waktu"}</label>
+          <TimeSlotPicker
+            startTime={startTime}
+            endTime={endTime}
+            onChange={(s, e) => {
+              setStartTime(s);
+              setEndTime(e);
+            }}
+            bookings={resourceBookings}
+            date={date}
+            hidePast
+            compact
+            locale={locale}
+          />
         </div>
 
         <div className="form-field">

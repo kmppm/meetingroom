@@ -3,7 +3,8 @@
 import { addDaysISO, formatDateLong, todayISO } from "@/lib/time";
 import { IconChevronLeft, IconChevronRight } from "./icons";
 
-export function DateNav({ date, onChange, t, locale }) {
+// hideLabel (opsional, default false): sembunyikan teks tanggal panjang ("Jumat, 9 Oktober 2026").
+export function DateNav({ date, onChange, t, locale, hideLabel = false }) {
   return (
     <div className="date-nav date-nav-pill">
       <div className="date-nav-controls">
@@ -32,7 +33,9 @@ export function DateNav({ date, onChange, t, locale }) {
         </button>
       </div>
 
-      <span className="date-nav-label">{formatDateLong(date, locale)}</span>
+      {hideLabel ? null : (
+        <span className="date-nav-label">{formatDateLong(date, locale)}</span>
+      )}
 
       <input
         type="date"

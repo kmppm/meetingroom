@@ -1,6 +1,9 @@
 "use client";
 
+import { useState } from "react";
+import { createPortal } from "react-dom";
 import { getUnitMeta } from "@/lib/units";
+import { getResourceMeta } from "@/lib/resources";
 import {
   SLOT_STEP_MINUTES,
   generateGridSlots,
@@ -9,6 +12,25 @@ import {
   timeToMinutes,
   todayISO,
 } from "@/lib/time";
+
+// Label tooltip (hover di slot yang sudah dipesan)
+const TIP_LABELS = {
+  id: {
+    time: "Jam",
+    resource: "Ruangan / Meja",
+    bookedBy: "Dipesan oleh",
+    createdBy: "Dibuat oleh",
+  },
+  en: {
+    time: "Time",
+    resource: "Room / Table",
+    bookedBy: "Booked by",
+    createdBy: "Created by",
+  },
+};
+
+const TIP_WIDTH = 300;
+const TIP_EST_HEIGHT = 190;
 
 function buildSegments(bookings) {
   const slots = generateGridSlots();
@@ -61,8 +83,29 @@ function isPastSlot(date, startMinutes) {
   return startMinutes < now.getHours() * 60 + now.getMinutes();
 }
 
-export function ScheduleGrid({ date, bookings, onSlotClick, t }) {
+export function ScheduleGrid({ date, bookings, onSlotClick, t, locale }) {
   const segments = buildSegments(bookings);
+  const [tip, setTip] = useState(null);
+  const labels = locale === "en" ? TIP_LABELS.en : TIP_LABELS.id;
+
+  function showTip(e, booking, color) {
+    const rect = e.currentTarget.getBoundingClientRect();
+    const left = Math.max(
+      12,
+      Math.min(e.clientX, window.innerWidth - TIP_WIDTH - 12)
+    );
+    setTip({
+      booking,
+      color,
+      left,
+      top: rect.bottom + 6,
+      bottom: window.innerHeight - rect.top + 6,
+      above: window.innerHeight - rect.bottom < TIP_EST_HEIGHT,
+    });
+  }
+
+  const tipBooking = tip ? tip.booking : null;
+  const tipUnit = tipBooking ? getUnitMeta(tipBooking.unit) : null;
 
   return (
     <div className="schedule-card">
@@ -75,7 +118,12 @@ export function ScheduleGrid({ date, bookings, onSlotClick, t }) {
           if (seg.type === "booked") {
             const unitMeta = getUnitMeta(seg.booking.unit);
             return (
-              <div className="schedule-row" key={`${seg.startMinutes}-b`}>
+              <div
+                className="schedule-row is-booked"
+                key={`${seg.startMinutes}-b`}
+                onMouseEnter={(e) => showTip(e, seg.booking, unitMeta?.color)}
+                onMouseLeave={() => setTip(null)}
+              >
                 <div className="schedule-time">{timeLabel}</div>
                 <div
                   className="schedule-slot booked"
@@ -112,6 +160,54 @@ export function ScheduleGrid({ date, bookings, onSlotClick, t }) {
           );
         })}
       </div>
+
+      {tip && typeof document !== "undefined"
+        ? createPortal(
+            <div
+              className="slot-tooltip"
+              role="tooltip"
+              style={{
+                left: tip.left,
+                ...(tip.above ? { bottom: tip.bottom } : { top: tip.top }),
+              }}
+            >
+              <div className="slot-tooltip-title">
+                {tipBooking.purpose || t.common.booked}
+              </div>
+
+              <div className="slot-tooltip-row">
+                <span className="slot-tooltip-key">{labels.time}</span>
+                <span className="slot-tooltip-val">
+                  {tipBooking.startTime}–{tipBooking.endTime}
+                </span>
+              </div>
+
+              <div className="slot-tooltip-row">
+                <span className="slot-tooltip-key">{labels.resource}</span>
+                <span className="slot-tooltip-val">
+                  {getResourceMeta(tipBooking.resource).name}
+                </span>
+              </div>
+
+              <div className="slot-tooltip-row">
+                <span className="slot-tooltip-key">{labels.bookedBy}</span>
+                <span className="slot-tooltip-val">
+                  {tipBooking.unitName || tipUnit?.name}
+                </span>
+              </div>
+
+              {tipBooking.createdBy === "admin" ? (
+                <div className="slot-tooltip-row">
+                  <span className="slot-tooltip-key">{labels.createdBy}</span>
+                  <span className="slot-tooltip-val">
+                    {tipBooking.createdByName || "Admin"}
+                  </span>
+                </div>
+              ) : null}
+            </div>,
+            document.body
+          )
+        : null}
 
       <style jsx global>{`
         .schedule-card {
@@ -186,6 +282,10 @@ export function ScheduleGrid({ date, bookings, onSlotClick, t }) {
           border-left: 3px solid transparent;
         }
 
+        .schedule-row.is-booked:hover .schedule-slot.booked {
+          background: var(--color-panel);
+        }
+
         .schedule-slot.past.free {
           cursor: not-allowed;
           color: var(--color-line-strong);
@@ -204,6 +304,46 @@ export function ScheduleGrid({ date, bookings, onSlotClick, t }) {
           color: #fff;
           white-space: nowrap;
           flex-shrink: 0;
+        }
+
+        /* ---------- Tooltip detail booking (hover) ---------- */
+
+        .slot-tooltip {
+          position: fixed;
+          z-index: 300;
+          width: 300px;
+          max-width: calc(100vw - 24px);
+          padding: 12px 14px;
+          background: var(--color-surface);
+          border: 1px solid var(--color-line-strong);
+          border-radius: 12px;
+          pointer-events: none;
+          font-size: 12px;
+        }
+
+        .slot-tooltip-title {
+          margin-bottom: 8px;
+          font-size: 14px;
+          font-weight: 700;
+          color: var(--color-ink);
+          word-break: break-word;
+        }
+
+        .slot-tooltip-row {
+          display: grid;
+          grid-template-columns: 96px 1fr;
+          gap: 8px;
+          padding: 3px 0;
+        }
+
+        .slot-tooltip-key {
+          color: var(--color-ink-soft);
+        }
+
+        .slot-tooltip-val {
+          font-weight: 600;
+          color: var(--color-ink);
+          word-break: break-word;
         }
 
         @media (max-width: 860px) {

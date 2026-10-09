@@ -7,21 +7,25 @@ import { DateNav } from "@/components/ui/DateNav";
 import { ScheduleGrid } from "./ScheduleGrid";
 import { ScheduleSkeleton } from "./ScheduleSkeleton";
 import { BookingModal } from "@/components/booking/BookingModal";
+import { RESOURCES, DEFAULT_RESOURCE } from "@/lib/resources";
 import { todayISO } from "@/lib/time";
 
 export function DashboardClient({ session }) {
   const { t, locale } = useLanguage();
   const requestLogin = useLoginModal();
   const [date, setDate] = useState(todayISO());
+  const [resource, setResource] = useState(DEFAULT_RESOURCE);
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [modalStart, setModalStart] = useState(null);
   const [success, setSuccess] = useState("");
 
-  async function loadBookings(forDate) {
+  async function loadBookings(forDate, forResource) {
     setLoading(true);
     try {
-      const res = await fetch(`/api/bookings?date=${forDate}`);
+      const res = await fetch(
+        `/api/bookings?date=${forDate}&resource=${forResource}`
+      );
       const data = await res.json();
       setBookings(res.ok ? data.bookings : []);
     } finally {
@@ -30,13 +34,13 @@ export function DashboardClient({ session }) {
   }
 
   useEffect(() => {
-    loadBookings(date);
-  }, [date]);
+    loadBookings(date, resource);
+  }, [date, resource]);
 
   function handleCreated() {
     setModalStart(null);
     setSuccess(t.booking.success);
-    loadBookings(date);
+    loadBookings(date, resource);
     setTimeout(() => setSuccess(""), 4000);
   }
 
@@ -58,7 +62,25 @@ export function DashboardClient({ session }) {
           </div>
 
           {success ? <div className="alert alert-success">{success}</div> : null}
-          <DateNav date={date} onChange={setDate} t={t} locale={locale} />
+
+          <div className="dashboard-toolbar">
+            <div className="dashboard-resource-tabs">
+              {Object.values(RESOURCES).map((r) => (
+                <button
+                  key={r.code}
+                  type="button"
+                  className={`btn resource-btn ${
+                    resource === r.code ? "btn-primary" : "btn-secondary"
+                  }`}
+                  onClick={() => setResource(r.code)}
+                >
+                  {r.name}
+                </button>
+              ))}
+            </div>
+
+            <DateNav date={date} onChange={setDate} t={t} locale={locale} hideLabel />
+          </div>
         </div>
 
         <div className="dashboard-card-body">
@@ -70,6 +92,7 @@ export function DashboardClient({ session }) {
               bookings={bookings}
               onSlotClick={handleSlotClick}
               t={t}
+              locale={locale}
             />
           )}
         </div>
@@ -79,6 +102,7 @@ export function DashboardClient({ session }) {
         <BookingModal
           date={date}
           initialStart={modalStart}
+          resource={resource}
           session={session}
           t={t}
           locale={locale}
@@ -116,6 +140,30 @@ export function DashboardClient({ session }) {
         }
 
         .dashboard-card-header .date-nav {
+          margin-bottom: 0;
+        }
+
+        .dashboard-toolbar {
+          display: flex;
+          align-items: center;
+          flex-wrap: wrap;
+          gap: 12px 16px;
+          margin-top: 12px;
+        }
+
+        .dashboard-resource-tabs {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 8px;
+        }
+
+        .dashboard-toolbar .resource-btn {
+          border-radius: 999px;
+        }
+
+        .dashboard-toolbar .date-nav {
+          flex: 1 1 460px;
+          min-width: 0;
           margin-bottom: 0;
         }
 

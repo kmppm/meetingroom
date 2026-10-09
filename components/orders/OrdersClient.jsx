@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useLanguage } from "@/components/layout/LanguageProvider";
 import { getUnitMeta } from "@/lib/units";
+import { getResourceMeta } from "@/lib/resources";
 import { formatDateLong, todayISO } from "@/lib/time";
 
 function isPastBooking(booking) {
@@ -16,6 +17,7 @@ function isPastBooking(booking) {
 export function OrdersClient({ session }) {
   const { t, locale } = useLanguage();
   const isAdmin = session.role === "admin";
+  const resourceLabel = locale === "en" ? "Room / Table" : "Ruangan / Meja";
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [pendingCancel, setPendingCancel] = useState(null);
@@ -86,6 +88,7 @@ export function OrdersClient({ session }) {
                     <th>{t.common.date}</th>
                     <th>{t.common.startTime}</th>
                     <th>{t.common.endTime}</th>
+                    <th>{resourceLabel}</th>
                     {isAdmin ? <th>{t.common.unit}</th> : null}
                     <th>{t.common.purpose}</th>
                     <th>{t.common.status}</th>
@@ -96,17 +99,19 @@ export function OrdersClient({ session }) {
                   {bookings.map((b, index) => {
                     const past = isPastBooking(b);
                     const meta = getUnitMeta(b.unit);
+                    const resourceMeta = getResourceMeta(b.resource);
                     const canCancel = isAdmin || b.unit === session.unit;
                     return (
                       <tr key={b.id}>
-                        <td>
+                        <td className="col-index">
                           <span className="order-no-badge">{index + 1}</span>
                         </td>
-                        <td>{formatDateLong(b.date, locale)}</td>
-                        <td>{b.startTime}</td>
-                        <td>{b.endTime}</td>
+                        <td data-label={t.common.date}>{formatDateLong(b.date, locale)}</td>
+                        <td data-label={t.common.startTime}>{b.startTime}</td>
+                        <td data-label={t.common.endTime}>{b.endTime}</td>
+                        <td data-label={resourceLabel}>{resourceMeta.name}</td>
                         {isAdmin ? (
-                          <td>
+                          <td data-label={t.common.unit}>
                             <span className="unit-pill">
                               <span
                                 className="unit-dot"
@@ -116,9 +121,11 @@ export function OrdersClient({ session }) {
                             </span>
                           </td>
                         ) : null}
-                        <td>{b.purpose || "—"}</td>
-                        <td>{past ? t.common.past : t.common.upcoming}</td>
-                        <td>
+                        <td data-label={t.common.purpose}>{b.purpose || "—"}</td>
+                        <td data-label={t.common.status}>
+                          {past ? t.common.past : t.common.upcoming}
+                        </td>
+                        <td data-label={t.common.action} className="col-action">
                           {canCancel ? (
                             <button
                               type="button"
@@ -246,15 +253,81 @@ export function OrdersClient({ session }) {
             padding: 16px;
           }
 
+          /* ---------- Table -> stacked cards on mobile ---------- */
+
           .table-wrap {
-            overflow-x: auto;
-            -webkit-overflow-scrolling: touch;
-            margin: 0 -16px;
-            padding: 0 16px;
+            overflow-x: visible;
+            margin: 0;
+            padding: 0;
+            border: none;
+            background: transparent;
           }
 
           .table {
-            min-width: 640px;
+            min-width: 0;
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+          }
+
+          .table thead {
+            display: none;
+          }
+
+          .table tbody {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+          }
+
+          .table tbody tr {
+            display: block;
+            background: var(--color-surface);
+            border: 1px solid var(--color-line);
+            border-radius: var(--radius-lg);
+            padding: 4px 14px;
+          }
+
+          .table tbody tr td {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            padding: 10px 0;
+            border-bottom: 1px solid var(--color-line);
+            white-space: normal;
+            text-align: right;
+          }
+
+          .table tbody tr td:last-child {
+            border-bottom: none;
+          }
+
+          .table tbody tr td::before {
+            content: attr(data-label);
+            flex-shrink: 0;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            color: var(--color-ink-soft);
+            text-align: left;
+          }
+
+          .table tbody tr td.col-index {
+            display: none;
+          }
+
+          .table tbody tr td.col-action {
+            justify-content: flex-end;
+          }
+
+          .table tbody tr td.col-action::before {
+            display: none;
+          }
+
+          .orders-cancel-btn {
+            width: 100%;
           }
         }
       `}</style>
