@@ -303,7 +303,7 @@ export function OrdersClient({ session }) {
           .table tbody tr {
             display: block;
             background: var(--color-surface);
-            border: 1px solid var(--color-line);
+            border: 1.4px solid var(--color-line);
             border-radius: var(--radius-lg);
             padding: 4px 14px;
           }
@@ -317,6 +317,7 @@ export function OrdersClient({ session }) {
             border-bottom: 1px solid var(--color-line);
             white-space: normal;
             text-align: right;
+            font-weight: 600;
           }
 
           .table tbody tr td:last-child {
@@ -326,11 +327,12 @@ export function OrdersClient({ session }) {
           .table tbody tr td::before {
             content: attr(data-label);
             flex-shrink: 0;
-            font-size: 12px;
+            font-size: 10.5px;
             font-weight: 600;
             text-transform: uppercase;
             letter-spacing: 0.04em;
             color: var(--color-ink-soft);
+            opacity: 0.65;
             text-align: left;
           }
 
