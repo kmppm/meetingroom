@@ -12,6 +12,7 @@ import {
 } from "@/lib/time";
 
 // resource (opsional): resource yang dipilih awal. Kalau tidak dikirim, default ke Sadiman.
+// date: tanggal awal di kolom Tanggal (user bisa menggantinya langsung di dalam popup).
 export function BookingModal({
   date,
   initialStart,
@@ -29,6 +30,8 @@ export function BookingModal({
     ROOM_CLOSE_MINUTES
   );
 
+  // Tanggal booking: default dari prop `date`, bisa diganti user di dalam popup.
+  const [bookingDate, setBookingDate] = useState(date);
   const [startTime, setStartTime] = useState(initialStart);
   const [endTime, setEndTime] = useState(minutesToTime(defaultEndMinutes));
   const [purpose, setPurpose] = useState("");
@@ -38,14 +41,14 @@ export function BookingModal({
   const [submitting, setSubmitting] = useState(false);
 
   // Semua booking di tanggal ini, dipakai untuk menyembunyikan jam yang sudah terpesan.
-  // Diambil sendiri oleh modal supaya tetap benar walau ruangan diganti di dalam modal.
+  // Diambil sendiri oleh modal supaya tetap benar walau ruangan atau tanggal diganti di dalam modal.
   const [dayBookings, setDayBookings] = useState([]);
 
   useEffect(() => {
     let cancelled = false;
     async function load() {
       try {
-        const res = await fetch(`/api/bookings?date=${date}`);
+        const res = await fetch(`/api/bookings?date=${bookingDate}`);
         const data = await res.json();
         if (!cancelled) setDayBookings(res.ok ? data.bookings : []);
       } catch (err) {
@@ -56,11 +59,20 @@ export function BookingModal({
     return () => {
       cancelled = true;
     };
-  }, [date]);
+  }, [bookingDate]);
 
   const resourceBookings = dayBookings.filter(
     (b) => getResourceMeta(b.resource).code === resource
   );
+
+  function handleDateChange(newDate) {
+    // Abaikan kalau dikosongkan, supaya tanggal tidak pernah kosong.
+    if (!newDate) return;
+    setBookingDate(newDate);
+    // Ketersediaan jam beda per tanggal, jadi pilihan jam direset.
+    setStartTime("");
+    setEndTime("");
+  }
 
   function handleResourceChange(code) {
     setResource(code);
@@ -95,7 +107,7 @@ export function BookingModal({
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          date,
+          date: bookingDate,
           startTime,
           endTime,
           purpose,
@@ -130,9 +142,28 @@ export function BookingModal({
         <div className="modal-drag-handle" aria-hidden="true" />
 
         <h2 className="modal-title">{t.common.book}</h2>
-        <p className="modal-subtitle">{formatDateLong(date, locale)}</p>
+        <p className="modal-subtitle">{formatDateLong(bookingDate, locale)}</p>
 
         {error ? <div className="alert alert-error">{error}</div> : null}
+
+        <div className="form-field">
+          <label className="form-label">{t.common.date}</label>
+          <input
+            type="date"
+            className="input"
+            value={bookingDate}
+            onClick={(e) => {
+              // Buka kalender saat kolom diklik di mana saja, bukan hanya di ikon.
+              try {
+                e.currentTarget.showPicker?.();
+              } catch (err) {
+                // Browser yang tidak mengizinkan: biarkan perilaku bawaan.
+              }
+            }}
+            onChange={(e) => handleDateChange(e.target.value)}
+            required
+          />
+        </div>
 
         <div className="form-field">
           <label className="form-label">
@@ -183,7 +214,7 @@ export function BookingModal({
               setEndTime(e);
             }}
             bookings={resourceBookings}
-            date={date}
+            date={bookingDate}
             hidePast
             compact
             locale={locale}

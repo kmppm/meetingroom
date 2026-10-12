@@ -9,7 +9,9 @@ import { RESOURCES, getResourceMeta } from "@/lib/resources";
 // Section "form booking" di halaman Pemesanan Ruangan.
 // Props:
 // - session: sesi user (role, unit)
-// - date: tanggal yang dipilih di halaman ("YYYY-MM-DD")
+// - date: tanggal yang dipilih di halaman ("YYYY-MM-DD"), default hari ini
+// - onDateChange: dipanggil saat user mengganti tanggal lewat kolom Tanggal di form
+//   (tanggal di header halaman ikut berubah, karena memakai state yang sama)
 // - bookings: semua booking pada tanggal itu (difilter di sini per ruangan yang dipilih)
 // - resource: ruangan/meja yang dipilih ("" = belum dipilih)
 // - onResourceChange: dipanggil saat user memilih ruangan di dropdown
@@ -17,6 +19,7 @@ import { RESOURCES, getResourceMeta } from "@/lib/resources";
 export function BookingForm({
   session,
   date,
+  onDateChange,
   bookings,
   resource,
   onResourceChange,
@@ -110,6 +113,28 @@ export function BookingForm({
     <form className="card booking-form-card" onSubmit={handleSubmit}>
       {error ? <div className="alert alert-error">{error}</div> : null}
       {success ? <div className="alert alert-success">{success}</div> : null}
+
+      <div className="form-field">
+        <label className="form-label">{t.common.date}</label>
+        <input
+          type="date"
+          className="input"
+          value={date}
+          onClick={(e) => {
+            // Buka kalender saat kolom diklik di mana saja, bukan hanya di ikon.
+            try {
+              e.currentTarget.showPicker?.();
+            } catch (err) {
+              // Browser yang tidak mengizinkan: biarkan perilaku bawaan.
+            }
+          }}
+          onChange={(e) => {
+            // Abaikan kalau dikosongkan, supaya tanggal tidak pernah kosong.
+            if (e.target.value) onDateChange(e.target.value);
+          }}
+          required
+        />
+      </div>
 
       <div className="form-field">
         <label className="form-label">{isEn ? "Room / Table" : "Ruangan / Meja"}</label>

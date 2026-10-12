@@ -65,6 +65,7 @@ export function BookingPageClient({ session }) {
             <BookingForm
               session={session}
               date={date}
+              onDateChange={setDate}
               bookings={bookings}
               resource={resource}
               onResourceChange={handleResourceSelect}
