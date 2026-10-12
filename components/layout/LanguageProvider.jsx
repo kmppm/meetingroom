@@ -7,7 +7,8 @@ const LanguageContext = createContext(null);
 const STORAGE_KEY = "mrb_locale";
 
 export function LanguageProvider({ children }) {
-  const [locale, setLocale] = useState("en");
+  // Bahasa default: Indonesia. Pilihan yang sudah disimpan user tetap dipakai.
+  const [locale, setLocale] = useState("id");
 
   useEffect(() => {
     const saved = window.localStorage.getItem(STORAGE_KEY);
