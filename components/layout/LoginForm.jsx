@@ -1,9 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { UNITS } from "@/lib/units";
 import { useLanguage } from "./LanguageProvider";
+
+// Letakkan file video di folder public/ lalu sesuaikan nama file di sini.
+// Contoh: public/login-video.mp4 -> "/login-video.mp4"
+const LOGIN_VIDEO_SRC = "/login-video1.mp4";
 
 function EyeIcon() {
   return (
@@ -47,6 +51,28 @@ export function LoginForm({ onSuccess, onClose }) {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
+
+  // Video hanya dimuat di layar lebar (panel video disembunyikan di mobile,
+  // jadi tidak perlu mengunduh videonya). Kalau user memilih "kurangi gerakan",
+  // video tidak diputar otomatis.
+  const [showVideo, setShowVideo] = useState(false);
+  const [reduceMotion, setReduceMotion] = useState(false);
+
+  useEffect(() => {
+    const wide = window.matchMedia("(min-width: 861px)");
+    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const update = () => {
+      setShowVideo(wide.matches);
+      setReduceMotion(reduce.matches);
+    };
+    update();
+    wide.addEventListener("change", update);
+    reduce.addEventListener("change", update);
+    return () => {
+      wide.removeEventListener("change", update);
+      reduce.removeEventListener("change", update);
+    };
+  }, []);
 
   const isModal = Boolean(onClose);
 
@@ -165,10 +191,26 @@ export function LoginForm({ onSuccess, onClose }) {
     </form>
   );
 
-  return (
-    <>
-      {isModal ? (
-        <div className="login-modal-card">
+  // Kartu dua kolom: video di kiri, form di kanan (dipakai popup & halaman /login).
+  const split = (
+    <div className="lf-split">
+      <div className="lf-media" aria-hidden="true">
+        {showVideo ? (
+          <video
+            className="lf-video"
+            src={LOGIN_VIDEO_SRC}
+            autoPlay={!reduceMotion}
+            loop={!reduceMotion}
+            muted
+            playsInline
+            preload="auto"
+            tabIndex={-1}
+          />
+        ) : null}
+      </div>
+
+      <div className="lf-panel">
+        {isModal ? (
           <button
             type="button"
             className="login-modal-dismiss"
@@ -177,8 +219,16 @@ export function LoginForm({ onSuccess, onClose }) {
           >
             ×
           </button>
-          {form}
-        </div>
+        ) : null}
+        {form}
+      </div>
+    </div>
+  );
+
+  return (
+    <>
+      {isModal ? (
+        split
       ) : (
         <div className="login-page">
           <div style={{ position: "absolute", top: 20, right: 20 }}>
@@ -200,52 +250,78 @@ export function LoginForm({ onSuccess, onClose }) {
             </div>
           </div>
 
-          <div className="card login-card">
-            <div className="login-brand" />
-            {form}
-          </div>
+          {split}
         </div>
       )}
 
       <style jsx global>{`
-        /* ---------- Kartu modal ---------- */
-        .login-modal-card {
+        /* ---------- Kartu dua kolom ---------- */
+        .lf-split {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          width: 100%;
+          max-width: 880px;
+          min-height: 520px;
+          background: var(--color-surface);
+          border-radius: 14px;
+          overflow: hidden;
+        }
+
+        /* Kolom kiri: video memenuhi seluruh kolom */
+        .lf-media {
           position: relative;
-          background: #ffffff;
-          border: 1px solid #e2e8f0;
-          border-radius: 24px;
-          padding: 36px 32px 28px;
-          box-shadow: 0 10px 40px rgba(15, 23, 42, 0.12);
+          background: var(--color-panel);
+        }
+
+        .lf-video {
+          position: absolute;
+          inset: 0;
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+          display: block;
+        }
+
+        /* Kolom kanan: form, rata tengah secara vertikal */
+        .lf-panel {
+          position: relative;
+          display: flex;
+          flex-direction: column;
+          justify-content: center;
+          padding: 48px 44px;
         }
 
         .login-modal-dismiss {
           position: absolute;
-          top: 16px;
-          right: 16px;
-          width: 28px;
-          height: 28px;
+          top: 14px;
+          right: 14px;
+          width: 32px;
+          height: 32px;
           display: flex;
           align-items: center;
           justify-content: center;
           border: none;
           background: transparent;
           border-radius: 50%;
-          font-size: 18px;
+          font-size: 20px;
           line-height: 1;
           cursor: pointer;
-          color: #94a3b8;
+          color: var(--color-ink-soft);
           transition: background-color 120ms ease, color 120ms ease;
         }
 
         .login-modal-dismiss:hover {
-          background: #f1f5f9;
-          color: #0f172a;
+          background: var(--color-panel);
+          color: var(--color-ink);
         }
 
-        /* ---------- Form (dipakai modal & halaman /login) ---------- */
+        /* ---------- Form ---------- */
         .lf-form {
           display: flex;
           flex-direction: column;
+          width: 100%;
+          max-width: 360px;
+          margin: 0 auto;
         }
 
         .lf-header {
@@ -254,21 +330,21 @@ export function LoginForm({ onSuccess, onClose }) {
 
         .lf-title {
           margin: 0;
-          font-size: 24px;
+          font-size: 22px;
           font-weight: 700;
           letter-spacing: -0.01em;
-          color: #0f172a;
+          color: var(--color-ink);
         }
 
         .lf-subtitle {
-          margin: 8px 0 0;
+          margin: 6px 0 0;
           font-size: 14px;
-          line-height: 1.6;
-          color: #64748b;
+          line-height: 1.55;
+          color: var(--color-ink-soft);
         }
 
         .lf-fields {
-          margin-top: 28px;
+          margin-top: 24px;
           display: flex;
           flex-direction: column;
           gap: 16px;
@@ -276,36 +352,40 @@ export function LoginForm({ onSuccess, onClose }) {
 
         .lf-label {
           display: block;
-          margin-bottom: 6px;
+          margin: 0 0 6px 4px;
           font-size: 13px;
           font-weight: 600;
-          color: #0f172a;
+          color: var(--color-ink);
         }
 
-        /* Semua kolom (dropdown & password) berukuran sama */
+        /* Semua kolom (dropdown & password): kapsul 48px, sama dengan tombol */
         .lf-control {
           display: block;
           width: 100%;
           height: 48px;
-          padding: 0 16px;
+          padding: 0 20px;
           box-sizing: border-box;
-          border: 1px solid #e2e8f0;
-          border-radius: 10px;
-          background-color: #ffffff;
+          border: 1px solid var(--color-line-strong);
+          border-radius: 999px;
+          background-color: var(--color-surface);
           font-family: inherit;
           font-size: 14px;
-          color: #0f172a;
+          color: var(--color-ink);
           outline: none;
-          transition: border-color 120ms ease, box-shadow 120ms ease;
+          transition: border-color 120ms ease;
         }
 
         .lf-control::placeholder {
-          color: #94a3b8;
+          color: var(--color-ink-soft);
+          opacity: 0.7;
+        }
+
+        .lf-control:hover {
+          border-color: var(--color-ink-soft);
         }
 
         .lf-control:focus {
-          border-color: #0f172a;
-          box-shadow: 0 0 0 3px rgba(15, 23, 42, 0.08);
+          border-color: var(--color-ink);
         }
 
         .lf-select-wrap {
@@ -316,26 +396,26 @@ export function LoginForm({ onSuccess, onClose }) {
           appearance: none;
           -webkit-appearance: none;
           cursor: pointer;
-          padding-right: 44px;
+          padding-right: 48px;
         }
 
         .lf-chevron {
           position: absolute;
           top: 50%;
-          right: 16px;
+          right: 20px;
           transform: translateY(-50%);
           display: flex;
-          color: #94a3b8;
+          color: var(--color-ink-soft);
           pointer-events: none;
         }
 
-        /* Abu-abu selama belum ada unit yang dipilih */
+        /* Pudar selama belum ada unit yang dipilih */
         .lf-select:invalid {
-          color: #94a3b8;
+          color: var(--color-ink-soft);
         }
 
         .lf-select option {
-          color: #0f172a;
+          color: var(--color-ink);
         }
 
         .lf-password-wrap {
@@ -343,14 +423,14 @@ export function LoginForm({ onSuccess, onClose }) {
         }
 
         .lf-control-password {
-          padding-right: 48px;
+          padding-right: 52px;
         }
 
-        /* Ikon mata di dalam kolom password, sisi kanan */
+        /* Ikon mata: tombol bulat di dalam kolom password, sisi kanan */
         .lf-eye {
           position: absolute;
           top: 50%;
-          right: 8px;
+          right: 7px;
           transform: translateY(-50%);
           width: 34px;
           height: 34px;
@@ -358,35 +438,35 @@ export function LoginForm({ onSuccess, onClose }) {
           align-items: center;
           justify-content: center;
           border: none;
-          border-radius: 8px;
+          border-radius: 50%;
           background: transparent;
-          color: #94a3b8;
+          color: var(--color-ink-soft);
           cursor: pointer;
           transition: color 120ms ease, background-color 120ms ease;
         }
 
         .lf-eye:hover {
-          color: #0f172a;
-          background: #f1f5f9;
+          color: var(--color-ink);
+          background: var(--color-panel);
         }
 
         .lf-alert {
           margin: 16px 0 0;
-          border-radius: 10px;
-          background: #fef2f2;
-          padding: 10px 14px;
+          border-radius: 16px;
+          background: var(--color-danger-soft);
+          padding: 10px 16px;
           font-size: 13px;
-          color: #dc2626;
+          color: var(--color-danger);
         }
 
-        /* Tombol masuk: hitam, ukuran sama dengan kolom password */
+        /* Tombol masuk: kapsul hitam, tinggi sama dengan kolom */
         .lf-submit {
           margin-top: 20px;
           width: 100%;
           height: 48px;
           border: none;
-          border-radius: 10px;
-          background: #111111;
+          border-radius: 999px;
+          background: var(--color-ink);
           font-family: inherit;
           font-size: 14px;
           font-weight: 600;
@@ -395,12 +475,12 @@ export function LoginForm({ onSuccess, onClose }) {
           transition: background-color 120ms ease, opacity 120ms ease;
         }
 
-        .lf-submit:hover {
-          background: #000000;
+        .lf-submit:hover:not(:disabled) {
+          background: #2b2b2b;
         }
 
         .lf-submit:disabled {
-          opacity: 0.5;
+          opacity: 0.55;
           cursor: not-allowed;
         }
 
@@ -409,7 +489,36 @@ export function LoginForm({ onSuccess, onClose }) {
           text-align: center;
           font-size: 12px;
           font-weight: 500;
-          color: #94a3b8;
+          color: var(--color-ink-soft);
+          opacity: 0.8;
+        }
+
+        @media (max-width: 860px) {
+          /* Di mobile: video disembunyikan, tinggal form satu kolom */
+          .lf-split {
+            grid-template-columns: 1fr;
+            min-height: 0;
+            max-width: 420px;
+            margin: 0 auto;
+            border-radius: 14px;
+          }
+
+          .lf-media {
+            display: none;
+          }
+
+          .lf-panel {
+            padding: 28px 20px 22px;
+          }
+
+          .lf-fields {
+            margin-top: 20px;
+          }
+
+          /* 16px supaya iOS Safari tidak memperbesar layar saat kolom difokuskan */
+          .lf-control {
+            font-size: 16px;
+          }
         }
       `}</style>
     </>

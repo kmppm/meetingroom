@@ -92,7 +92,7 @@ export function AppShell({ session, children }) {
 
         .login-modal-panel {
           width: 100%;
-          max-width: 420px;
+          max-width: 880px;
         }
 
         @media (max-width: 860px) {
