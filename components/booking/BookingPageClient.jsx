@@ -27,10 +27,16 @@ export function BookingPageClient({ session }) {
 
   // Mobile: dropdown ruangan di form disembunyikan (diganti segmented control
   // di header), jadi ruangan default langsung dipilih supaya form siap dipakai.
+  // Dipantau terus (bukan hanya saat mount) supaya tetap berlaku saat layar
+  // diputar atau jendela diubah ukurannya ke lebar mobile.
   useEffect(() => {
-    if (window.matchMedia("(max-width: 860px)").matches) {
-      setResource((r) => r || DEFAULT_RESOURCE);
+    const mq = window.matchMedia("(max-width: 860px)");
+    function applyDefault() {
+      if (mq.matches) setResource((r) => r || DEFAULT_RESOURCE);
     }
+    applyDefault();
+    mq.addEventListener("change", applyDefault);
+    return () => mq.removeEventListener("change", applyDefault);
   }, []);
 
   // Pilih di dropdown form -> tab jadwal ikut berpindah.
