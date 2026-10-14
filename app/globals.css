@@ -20,7 +20,7 @@
   --color-sidebar-ink-dim: #6b6b68;
   --color-sidebar-active: #f2f2f0;
 
-  --font-sans: "Onest", "Segoe UI", system-ui, -apple-system, sans-serif;
+  --font-sans: var(--font-onest), "Onest", "Segoe UI", system-ui, -apple-system, sans-serif;
 
   --radius-sm: 6px;
   --radius-md: 10px;

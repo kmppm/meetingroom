@@ -1,5 +1,16 @@
 import "./globals.css";
+import { Onest } from "next/font/google";
 import { LanguageProvider } from "@/components/layout/LanguageProvider";
+import StyledJsxRegistry from "@/components/layout/StyledJsxRegistry";
+
+// Font di-host sendiri oleh Next.js dan di-preload, jadi tidak ada "loncat font"
+// di awal halaman. Variabel --font-onest dipakai di globals.css (--font-sans).
+const onest = Onest({
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
+  display: "swap",
+  variable: "--font-onest",
+});
 
 export const metadata = {
   title: "Meeting Room Booking",
@@ -36,21 +47,11 @@ export const viewport = {
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="id">
-      <head>
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link
-          rel="preconnect"
-          href="https://fonts.gstatic.com"
-          crossOrigin="anonymous"
-        />
-        <link
-          href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600;700&display=swap"
-          rel="stylesheet"
-        />
-      </head>
+    <html lang="id" className={onest.variable}>
       <body>
-        <LanguageProvider>{children}</LanguageProvider>
+        <StyledJsxRegistry>
+          <LanguageProvider>{children}</LanguageProvider>
+        </StyledJsxRegistry>
       </body>
     </html>
   );
