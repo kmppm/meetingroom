@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useLanguage } from "@/components/layout/LanguageProvider";
 import { useLoginModal } from "@/components/layout/LoginModalContext";
 import { DateNav } from "@/components/ui/DateNav";
@@ -29,32 +29,94 @@ export function DashboardClient({ session }) {
   // { resource, start } saat modal booking terbuka
   const [modalTarget, setModalTarget] = useState(null);
   const [success, setSuccess] = useState("");
+  // Nomor permintaan terakhir: hasil dari permintaan yang sudah usang diabaikan
+  const requestIdRef = useRef(0);
 
-  // Ambil booking semua ruangan sekaligus untuk tanggal yang dipilih
-  async function loadBookings(forDate) {
-    setLoading(true);
+  // Ambil booking SEMUA ruangan dengan SATU permintaan (tanpa ?resource=),
+  // lalu dibagi per ruangan di sini. Ini menghemat command Redis dan request.
+  // silent = true: dipakai penyegaran otomatis, tanpa tampilan loading dan
+  // tanpa mengosongkan jadwal kalau permintaannya gagal.
+  async function loadBookings(forDate, silent = false) {
+    const requestId = ++requestIdRef.current;
+    if (!silent) setLoading(true);
     try {
-      const entries = await Promise.all(
-        Object.values(RESOURCES).map(async (r) => {
-          try {
-            const res = await fetch(
-              `/api/bookings?date=${forDate}&resource=${r.code}`
-            );
-            const data = await res.json();
-            return [r.code, res.ok ? data.bookings : []];
-          } catch {
-            return [r.code, []];
-          }
-        })
-      );
-      setBookingsByResource(Object.fromEntries(entries));
+      let list = null;
+      try {
+        const res = await fetch(`/api/bookings?date=${forDate}`);
+        const data = await res.json();
+        if (res.ok) list = data.bookings;
+      } catch {
+        // gagal: ditangani di bawah (list tetap null)
+      }
+
+      // Ada permintaan yang lebih baru (mis. tanggal sudah diganti): abaikan
+      if (requestId !== requestIdRef.current) return;
+
+      setBookingsByResource((prev) => {
+        if (list === null) return silent ? prev : {};
+        const next = {};
+        for (const r of Object.values(RESOURCES)) next[r.code] = [];
+        for (const b of list) {
+          const code = b.resource || DEFAULT_RESOURCE;
+          if (next[code]) next[code].push(b);
+        }
+        // Tidak ada yang berubah: pertahankan data lama (tanpa render ulang)
+        if (silent && JSON.stringify(prev) === JSON.stringify(next)) return prev;
+        return next;
+      });
     } finally {
-      setLoading(false);
+      if (requestId === requestIdRef.current) setLoading(false);
     }
   }
 
   useEffect(() => {
     loadBookings(date);
+  }, [date]);
+
+  // Penyegaran otomatis supaya booking orang lain ikut muncul.
+  // Hemat command database:
+  // - jeda 60 detik
+  // - berhenti saat tab tidak dibuka
+  // - berhenti kalau tidak ada aktivitas (mouse/keyboard/sentuh) selama 5 menit
+  // - begitu tab dibuka lagi atau ada aktivitas, langsung menyegarkan sekali
+  useEffect(() => {
+    const POLL_MS = 60 * 1000;
+    const IDLE_MS = 5 * 60 * 1000;
+    let lastActive = Date.now();
+
+    function refresh() {
+      if (document.visibilityState !== "visible") return;
+      if (Date.now() - lastActive > IDLE_MS) return;
+      loadBookings(date, true);
+    }
+
+    function markActive() {
+      const wasIdle = Date.now() - lastActive > IDLE_MS;
+      lastActive = Date.now();
+      if (wasIdle) refresh();
+    }
+
+    function onVisibility() {
+      if (document.visibilityState === "visible") {
+        lastActive = Date.now();
+        refresh();
+      }
+    }
+
+    const timer = setInterval(refresh, POLL_MS);
+    const activityEvents = ["pointerdown", "pointermove", "keydown", "touchstart", "scroll"];
+    activityEvents.forEach((ev) =>
+      window.addEventListener(ev, markActive, { passive: true, capture: true })
+    );
+    document.addEventListener("visibilitychange", onVisibility);
+
+    return () => {
+      clearInterval(timer);
+      activityEvents.forEach((ev) =>
+        window.removeEventListener(ev, markActive, { capture: true })
+      );
+      document.removeEventListener("visibilitychange", onVisibility);
+    };
   }, [date]);
 
   function handleCreated() {

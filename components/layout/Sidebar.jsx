@@ -5,11 +5,20 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { RiLogoutCircleRLine } from "react-icons/ri";
 import { AiOutlineLogin } from "react-icons/ai";
-import { IconlyCategory, IconlyCalendar, IconlyPaper } from "./IconlyIcons";
+import {
+  IconlyCategory,
+  IconlyCalendar,
+  IconlyPaper,
+  IconlyDocument,
+  IconlyMoreCircle,
+} from "./IconlyIcons";
 import { useLanguage } from "./LanguageProvider";
 import { getUnitMeta } from "@/lib/units";
 
 const ICON_SIZE = 20;
+
+// Link menu Panduan (halaman /panduan, dibuka di tab baru)
+const GUIDE_URL = "/panduan";
 
 // Label khusus mobile (bottom nav + menu akun), mengikuti bahasa aplikasi.
 const MOBILE_LABELS = {
@@ -32,11 +41,28 @@ const MOBILE_LABELS = {
   },
 };
 
+// Label menu tambahan (tampil di desktop saja), mengikuti bahasa aplikasi.
+const EXTRA_LABELS = {
+  en: {
+    menu: "Menu",
+    others: "Others",
+    guide: "Guide",
+    install: "Install App",
+  },
+  id: {
+    menu: "Menu",
+    others: "Lainnya",
+    guide: "Panduan",
+    install: "Install Aplikasi",
+  },
+};
+
 export function Sidebar({ session, t, onRequestLogin }) {
   const pathname = usePathname();
   const router = useRouter();
   const { locale, toggleLocale } = useLanguage();
   const labels = locale === "en" ? MOBILE_LABELS.en : MOBILE_LABELS.id;
+  const extraLabels = locale === "en" ? EXTRA_LABELS.en : EXTRA_LABELS.id;
   const [menuOpen, setMenuOpen] = useState(false);
 
   const unitMeta = session ? getUnitMeta(session.unit) : null;
@@ -67,6 +93,9 @@ export function Sidebar({ session, t, onRequestLogin }) {
     setMenuOpen(false);
     onRequestLogin();
   }
+
+  // Menu Install Aplikasi: tujuannya belum ditentukan, diisi nanti.
+  function handleInstall() {}
 
   const navItems = [
     {
@@ -99,6 +128,7 @@ export function Sidebar({ session, t, onRequestLogin }) {
     <aside className="sidebar">
       <div className="sidebar-brand">{t.appName}</div>
       <nav className="sidebar-nav">
+        <div className="sidebar-section-title">{extraLabels.menu}</div>
         {navItems.map((item) => {
           const Icon = item.icon;
           const active = pathname?.startsWith(item.href);
@@ -126,6 +156,27 @@ export function Sidebar({ session, t, onRequestLogin }) {
             </Link>
           );
         })}
+
+        {/* Menu tambahan: hanya tampil di desktop */}
+        <div className="sidebar-section-title is-spaced">{extraLabels.others}</div>
+        <a
+          href={GUIDE_URL}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="sidebar-link is-desktop-only"
+        >
+          <IconlyDocument size={ICON_SIZE} color="currentColor" />
+          <span className="sidebar-link-label">{extraLabels.guide}</span>
+        </a>
+
+        <button
+          type="button"
+          className="sidebar-link is-desktop-only"
+          onClick={handleInstall}
+        >
+          <IconlyMoreCircle size={ICON_SIZE} color="currentColor" />
+          <span className="sidebar-link-label">{extraLabels.install}</span>
+        </button>
       </nav>
       <div className="sidebar-footer">
         {/* Desktop: tombol logout / login seperti semula */}
@@ -282,6 +333,16 @@ export function Sidebar({ session, t, onRequestLogin }) {
           transition: background-color 120ms ease, color 120ms ease;
         }
 
+        /* Menu yang berupa <button> (mis. Install Aplikasi) tampil sama seperti link */
+        button.sidebar-link {
+          width: 100%;
+          border: none;
+          background: transparent;
+          font-family: inherit;
+          text-align: left;
+          cursor: pointer;
+        }
+
         .sidebar-link:hover {
           background: var(--color-panel);
           color: var(--color-sidebar-ink);
@@ -300,6 +361,21 @@ export function Sidebar({ session, t, onRequestLogin }) {
 
         .sidebar-link-label-mobile {
           display: none;
+        }
+
+        /* Judul bagian di sidebar (MENU / LAINNYA) */
+        .sidebar-section-title {
+          padding: 0 12px;
+          margin-bottom: 4px;
+          font-size: 11px;
+          font-weight: 700;
+          letter-spacing: 0.08em;
+          text-transform: uppercase;
+          color: var(--color-ink-soft);
+        }
+
+        .sidebar-section-title.is-spaced {
+          margin-top: 28px;
         }
 
         .sidebar-footer {
@@ -399,6 +475,12 @@ export function Sidebar({ session, t, onRequestLogin }) {
             text-align: center;
             transition: flex-grow 200ms ease, background-color 160ms ease,
               color 160ms ease;
+          }
+
+          /* Menu tambahan (Panduan, Install Aplikasi): tidak tampil di mobile */
+          .sidebar-link.is-desktop-only,
+          .sidebar-section-title {
+            display: none;
           }
 
           .sidebar-link:hover {

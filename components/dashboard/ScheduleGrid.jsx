@@ -32,6 +32,29 @@ const TIP_LABELS = {
 const TIP_WIDTH = 300;
 const TIP_EST_HEIGHT = 190;
 
+// Keperluan di slot ditampilkan maksimal sekian kata, sisanya jadi "…"
+// (teks lengkap tetap muncul di tooltip saat hover). Ubah angkanya kalau perlu.
+const MAX_PURPOSE_WORDS = 3;
+
+function truncateWords(text, max = MAX_PURPOSE_WORDS) {
+  if (!text) return "";
+  const tokens = text.trim().split(/\s+/);
+  const kept = [];
+  let words = 0;
+
+  for (const token of tokens) {
+    // Tanda baca berdiri sendiri seperti "-" tidak dihitung sebagai kata
+    const isWord = /[\p{L}\p{N}]/u.test(token);
+    if (isWord && words === max) {
+      return kept.join(" ").replace(/[\s\-–—:,;]+$/, "") + "…";
+    }
+    kept.push(token);
+    if (isWord) words++;
+  }
+
+  return kept.join(" ");
+}
+
 function buildSegments(bookings) {
   const slots = generateGridSlots();
   const segments = [];
@@ -87,6 +110,8 @@ export function ScheduleGrid({ date, bookings, onSlotClick, t, locale }) {
   const segments = buildSegments(bookings);
   const [tip, setTip] = useState(null);
   const labels = locale === "en" ? TIP_LABELS.en : TIP_LABELS.id;
+  // Label untuk slot kosong yang waktunya sudah lewat
+  const pastLabel = locale === "en" ? "Past" : "Lewat";
 
   function showTip(e, booking, color) {
     const rect = e.currentTarget.getBoundingClientRect();
@@ -130,7 +155,7 @@ export function ScheduleGrid({ date, bookings, onSlotClick, t, locale }) {
                   style={{ borderLeftColor: unitMeta?.color }}
                 >
                   <span className="schedule-slot-label">
-                    {seg.booking.purpose || t.common.booked}
+                    {truncateWords(seg.booking.purpose) || t.common.booked}
                   </span>
                   <span
                     className="slot-unit-badge"
@@ -154,7 +179,9 @@ export function ScheduleGrid({ date, bookings, onSlotClick, t, locale }) {
                 disabled={past}
                 onClick={() => onSlotClick(minutesToTime(seg.startMinutes))}
               >
-                <span className="schedule-slot-label">{t.common.available}</span>
+                <span className="schedule-slot-label">
+                  {past ? pastLabel : t.common.available}
+                </span>
               </button>
             </div>
           );
@@ -223,7 +250,7 @@ export function ScheduleGrid({ date, bookings, onSlotClick, t, locale }) {
 
         .schedule-row {
           display: grid;
-          grid-template-columns: 108px 1fr;
+          grid-template-columns: 108px minmax(0, 1fr);
           border-top: 1px solid var(--color-line);
         }
 
@@ -255,6 +282,7 @@ export function ScheduleGrid({ date, bookings, onSlotClick, t, locale }) {
           gap: 8px;
           border: none;
           width: 100%;
+          min-width: 0;
           text-align: left;
           background: transparent;
           font-family: inherit;
@@ -268,7 +296,19 @@ export function ScheduleGrid({ date, bookings, onSlotClick, t, locale }) {
 
         .schedule-slot.free {
           cursor: pointer;
-          color: var(--color-ink-soft);
+          color: var(--color-ink);
+        }
+
+        /* Titik hijau kecil penanda slot yang masih tersedia */
+        .schedule-slot.free:not(.past) .schedule-slot-label::before {
+          content: "";
+          display: inline-block;
+          width: 8px;
+          height: 8px;
+          margin-right: 8px;
+          border-radius: 50%;
+          background: var(--color-success);
+          vertical-align: middle;
         }
 
         .schedule-slot.free:hover {
@@ -280,6 +320,14 @@ export function ScheduleGrid({ date, bookings, onSlotClick, t, locale }) {
           cursor: default;
           font-weight: 600;
           border-left: 3px solid transparent;
+        }
+
+        /* Keperluan dibatasi satu baris, kelebihannya jadi "..." (detail ada di tooltip) */
+        .schedule-slot.booked .schedule-slot-label {
+          flex: 1;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
         }
 
         .schedule-row.is-booked:hover .schedule-slot.booked {
@@ -348,7 +396,7 @@ export function ScheduleGrid({ date, bookings, onSlotClick, t, locale }) {
 
         @media (max-width: 860px) {
           .schedule-row {
-            grid-template-columns: 84px 1fr;
+            grid-template-columns: 84px minmax(0, 1fr);
           }
 
           .schedule-time {

@@ -38,3 +38,24 @@ export const IconlyPaper = ({ size = 24, color = "#000000" }) => {
     </svg>
   );
 };
+
+export const IconlyDocument = ({ size = 24, color = "#000000" }) => {
+  return (
+    <svg width={size} height={size} viewBox="0 0 25 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M15.8451 15.6971H8.62512" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"></path>
+      <path d="M15.8451 11.9371H8.62512" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"></path>
+      <path d="M11.3799 8.17712H8.62488" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"></path>
+      <path d="M20.267 7.848C19.425 4.104 17.066 2.75 12.25 2.75C5.95701 2.75 3.85901 5.063 3.85901 12C3.85901 18.937 5.95701 21.25 12.25 21.25C18.544 21.25 20.641 18.937 20.641 12" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"></path>
+    </svg>
+  );
+};
+
+export const IconlyMoreCircle = ({ size = 24, color = "#000000" }) => {
+  return (
+    <svg width={size} height={size} viewBox="0 0 25 25" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path fillRule="evenodd" clipRule="evenodd" d="M6.46875 14.8472C8.38425 14.8472 9.9375 16.4 9.9375 18.3159C9.9375 20.2314 8.38425 21.7847 6.46875 21.7847C4.55287 21.7847 3 20.2314 3 18.3159C3 16.4004 4.55325 14.8472 6.46875 14.8472Z" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"></path>
+      <path fillRule="evenodd" clipRule="evenodd" d="M18.0312 14.8472C19.9467 14.8472 21.5 16.4 21.5 18.3159C21.5 20.2314 19.9467 21.7847 18.0312 21.7847C16.1154 21.7847 14.5625 20.2314 14.5625 18.3159C14.5625 16.4004 16.1158 14.8472 18.0312 14.8472Z" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"></path>
+      <path fillRule="evenodd" clipRule="evenodd" d="M12.25 3.28467C14.1655 3.28467 15.7188 4.83754 15.7188 6.75342C15.7188 8.66892 14.1655 10.2222 12.25 10.2222C10.3341 10.2222 8.78125 8.66892 8.78125 6.75342C8.78125 4.83792 10.3345 3.28467 12.25 3.28467Z" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"></path>
+    </svg>
+  );
+};
