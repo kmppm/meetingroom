@@ -215,6 +215,8 @@ const BOOKING_STEPS = [
     desc: (
       <>
         Klik menu <Ui>Pesanan Saya</Ui>. Pesanan langsung aktif dan tercatat.
+        Anda juga bisa membatalkan pesanan dengan mengklik tombol{" "}
+        <Ui>Batal</Ui> di daftar pesanan.
       </>
     ),
     shots: [SHOTS.selesai],
