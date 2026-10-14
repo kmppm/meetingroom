@@ -1,6 +1,7 @@
 import "./globals.css";
 import { Onest } from "next/font/google";
 import { LanguageProvider } from "@/components/layout/LanguageProvider";
+import { InstallProvider } from "@/components/layout/InstallProvider";
 import StyledJsxRegistry from "@/components/layout/StyledJsxRegistry";
 
 // Font di-host sendiri oleh Next.js dan di-preload, jadi tidak ada "loncat font"
@@ -50,7 +51,9 @@ export default function RootLayout({ children }) {
     <html lang="id" className={onest.variable}>
       <body>
         <StyledJsxRegistry>
-          <LanguageProvider>{children}</LanguageProvider>
+          <LanguageProvider>
+            <InstallProvider>{children}</InstallProvider>
+          </LanguageProvider>
         </StyledJsxRegistry>
       </body>
     </html>

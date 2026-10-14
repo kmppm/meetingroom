@@ -13,6 +13,7 @@ import {
   IconlyMoreCircle,
 } from "./IconlyIcons";
 import { useLanguage } from "./LanguageProvider";
+import { useInstall } from "./InstallProvider";
 import { getUnitMeta } from "@/lib/units";
 
 const ICON_SIZE = 20;
@@ -61,6 +62,7 @@ export function Sidebar({ session, t, onRequestLogin }) {
   const pathname = usePathname();
   const router = useRouter();
   const { locale, toggleLocale } = useLanguage();
+  const { canInstall, installed, install } = useInstall();
   const labels = locale === "en" ? MOBILE_LABELS.en : MOBILE_LABELS.id;
   const extraLabels = locale === "en" ? EXTRA_LABELS.en : EXTRA_LABELS.id;
   const [menuOpen, setMenuOpen] = useState(false);
@@ -94,8 +96,15 @@ export function Sidebar({ session, t, onRequestLogin }) {
     onRequestLogin();
   }
 
-  // Menu Install Aplikasi: tujuannya belum ditentukan, diisi nanti.
-  function handleInstall() {}
+  // Menu Install Aplikasi: kalau browser siap (Chrome/Edge), langsung munculkan
+  // dialog install. Kalau tidak (Safari, Firefox, dll), buka halaman Panduan.
+  async function handleInstall() {
+    if (canInstall) {
+      await install();
+      return;
+    }
+    window.open(GUIDE_URL, "_blank", "noopener,noreferrer");
+  }
 
   const navItems = [
     {
@@ -169,14 +178,17 @@ export function Sidebar({ session, t, onRequestLogin }) {
           <span className="sidebar-link-label">{extraLabels.guide}</span>
         </a>
 
-        <button
-          type="button"
-          className="sidebar-link is-desktop-only"
-          onClick={handleInstall}
-        >
-          <IconlyMoreCircle size={ICON_SIZE} color="currentColor" />
-          <span className="sidebar-link-label">{extraLabels.install}</span>
-        </button>
+        {/* Disembunyikan kalau web ini sudah dibuka sebagai aplikasi terpasang */}
+        {!installed ? (
+          <button
+            type="button"
+            className="sidebar-link is-desktop-only"
+            onClick={handleInstall}
+          >
+            <IconlyMoreCircle size={ICON_SIZE} color="currentColor" />
+            <span className="sidebar-link-label">{extraLabels.install}</span>
+          </button>
+        ) : null}
       </nav>
       <div className="sidebar-footer">
         {/* Desktop: tombol logout / login seperti semula */}
