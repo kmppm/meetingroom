@@ -20,42 +20,56 @@ export function DashboardClient({ session }) {
   const { t, locale } = useLanguage();
   const requestLogin = useLoginModal();
   const [date, setDate] = useState(todayISO());
+  // `resource` dipakai untuk tombol pilih ruangan saat layar sempit
+  // (di layar lebar kedua ruangan tampil berdampingan)
   const [resource, setResource] = useState(DEFAULT_RESOURCE);
-  const [bookings, setBookings] = useState([]);
+  // { [kodeRuangan]: daftar booking }
+  const [bookingsByResource, setBookingsByResource] = useState({});
   const [loading, setLoading] = useState(true);
-  const [modalStart, setModalStart] = useState(null);
+  // { resource, start } saat modal booking terbuka
+  const [modalTarget, setModalTarget] = useState(null);
   const [success, setSuccess] = useState("");
 
-  async function loadBookings(forDate, forResource) {
+  // Ambil booking semua ruangan sekaligus untuk tanggal yang dipilih
+  async function loadBookings(forDate) {
     setLoading(true);
     try {
-      const res = await fetch(
-        `/api/bookings?date=${forDate}&resource=${forResource}`
+      const entries = await Promise.all(
+        Object.values(RESOURCES).map(async (r) => {
+          try {
+            const res = await fetch(
+              `/api/bookings?date=${forDate}&resource=${r.code}`
+            );
+            const data = await res.json();
+            return [r.code, res.ok ? data.bookings : []];
+          } catch {
+            return [r.code, []];
+          }
+        })
       );
-      const data = await res.json();
-      setBookings(res.ok ? data.bookings : []);
+      setBookingsByResource(Object.fromEntries(entries));
     } finally {
       setLoading(false);
     }
   }
 
   useEffect(() => {
-    loadBookings(date, resource);
-  }, [date, resource]);
+    loadBookings(date);
+  }, [date]);
 
   function handleCreated() {
-    setModalStart(null);
+    setModalTarget(null);
     setSuccess(t.booking.success);
-    loadBookings(date, resource);
+    loadBookings(date);
     setTimeout(() => setSuccess(""), 4000);
   }
 
-  function handleSlotClick(startTime) {
+  function handleSlotClick(resourceCode, startTime) {
     if (!session) {
       requestLogin();
       return;
     }
-    setModalStart(startTime);
+    setModalTarget({ resource: resourceCode, start: startTime });
   }
 
   return (
@@ -107,29 +121,44 @@ export function DashboardClient({ session }) {
         </div>
 
         <div className="dashboard-card-body">
-          {loading ? (
-            <ScheduleSkeleton />
-          ) : (
-            <ScheduleGrid
-              date={date}
-              bookings={bookings}
-              onSlotClick={handleSlotClick}
-              t={t}
-              locale={locale}
-            />
-          )}
+          <div className="dashboard-columns">
+            {Object.values(RESOURCES).map((r) => (
+              <section
+                key={r.code}
+                className={`dashboard-col${
+                  resource === r.code ? " is-active" : ""
+                }`}
+                aria-label={r.name}
+              >
+                <h2 className="dashboard-col-title">{r.name}</h2>
+                {loading ? (
+                  <ScheduleSkeleton />
+                ) : (
+                  <ScheduleGrid
+                    date={date}
+                    bookings={bookingsByResource[r.code] || []}
+                    onSlotClick={(startTime) =>
+                      handleSlotClick(r.code, startTime)
+                    }
+                    t={t}
+                    locale={locale}
+                  />
+                )}
+              </section>
+            ))}
+          </div>
         </div>
       </div>
 
-      {modalStart && session ? (
+      {modalTarget && session ? (
         <BookingModal
           date={date}
-          initialStart={modalStart}
-          resource={resource}
+          initialStart={modalTarget.start}
+          resource={modalTarget.resource}
           session={session}
           t={t}
           locale={locale}
-          onClose={() => setModalStart(null)}
+          onClose={() => setModalTarget(null)}
           onCreated={handleCreated}
         />
       ) : null}
@@ -198,6 +227,51 @@ export function DashboardClient({ session }) {
 
         .resource-name-short {
           display: none;
+        }
+
+        /* ---------- Daftar jam per ruangan ---------- */
+
+        /* Layar sempit: hanya ruangan yang dipilih lewat tombol yang tampil */
+        .dashboard-columns {
+          display: grid;
+          grid-template-columns: 1fr;
+          gap: 16px;
+        }
+
+        .dashboard-col {
+          min-width: 0;
+        }
+
+        .dashboard-col:not(.is-active) {
+          display: none;
+        }
+
+        .dashboard-col-title {
+          display: none;
+          margin: 0 0 10px;
+          font-size: 15px;
+          font-weight: 800;
+          color: var(--color-ink);
+        }
+
+        /* Layar lebar: kedua ruangan berdampingan, tombol pilih ruangan disembunyikan */
+        @media (min-width: 1180px) {
+          .dashboard-columns {
+            grid-template-columns: 1fr 1fr;
+            align-items: start;
+          }
+
+          .dashboard-col:not(.is-active) {
+            display: block;
+          }
+
+          .dashboard-col-title {
+            display: block;
+          }
+
+          .dashboard-resource-tabs {
+            display: none;
+          }
         }
 
         @media (max-width: 860px) {
