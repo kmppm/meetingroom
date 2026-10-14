@@ -70,11 +70,17 @@ export function DashboardClient({ session }) {
           {success ? <div className="alert alert-success">{success}</div> : null}
 
           <div className="dashboard-toolbar">
-            <div className="dashboard-resource-tabs">
+            <div
+              className="dashboard-resource-tabs"
+              role="tablist"
+              aria-label={t.dashboard.title}
+            >
               {Object.values(RESOURCES).map((r) => (
                 <button
                   key={r.code}
                   type="button"
+                  role="tab"
+                  aria-selected={resource === r.code}
                   className={`btn resource-btn ${
                     resource === r.code ? "btn-primary" : "btn-secondary"
                   }`}
@@ -89,7 +95,14 @@ export function DashboardClient({ session }) {
               ))}
             </div>
 
-            <DateNav date={date} onChange={setDate} t={t} locale={locale} hideLabel />
+            <DateNav
+              date={date}
+              onChange={setDate}
+              t={t}
+              locale={locale}
+              hideLabel
+              mobileCompact
+            />
           </div>
         </div>
 
@@ -204,31 +217,40 @@ export function DashboardClient({ session }) {
           }
 
           .dashboard-card-header {
-            padding: 12px 14px;
+            padding: 12px;
           }
 
+          /* Judul & subjudul disembunyikan secara visual (bottom nav sudah
+             menandai halaman aktif), tetap ada untuk screen reader. */
           .dashboard-card-header .page-header {
-            margin-bottom: 8px;
-          }
-
-          .dashboard-card-header .page-title {
-            font-size: 18px;
-            margin: 0;
-          }
-
-          .dashboard-card-header .page-subtitle {
-            display: none;
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            margin: -1px;
+            padding: 0;
+            overflow: hidden;
+            clip: rect(0 0 0 0);
+            white-space: nowrap;
+            border: 0;
           }
 
           .dashboard-toolbar {
-            gap: 8px;
+            flex-direction: column;
+            align-items: stretch;
+            flex-wrap: nowrap;
+            gap: 10px;
             margin-top: 0;
           }
 
+          /* ---------- Segmented control ruangan ---------- */
           .dashboard-resource-tabs {
             flex-wrap: nowrap;
             width: 100%;
-            gap: 6px;
+            gap: 2px;
+            padding: 3px;
+            background: var(--color-panel);
+            border: 1px solid var(--color-line);
+            border-radius: 999px;
           }
 
           .dashboard-toolbar .resource-btn {
@@ -241,32 +263,18 @@ export function DashboardClient({ session }) {
             white-space: nowrap;
           }
 
-          /* Semua kapsul kontrol tanggal disamakan dengan tombol ruangan (36px) */
-          .dashboard-page-fill .dashboard-card-header .date-nav {
-            gap: 8px;
+          /* Pilihan non-aktif melebur ke wadah; yang aktif tetap pil gelap */
+          .dashboard-toolbar .resource-btn.btn-secondary {
+            background: transparent;
+            border-color: transparent;
+            box-shadow: none;
+            color: var(--color-ink-soft);
           }
 
-          .dashboard-page-fill .dashboard-card-header .date-nav button,
-          .dashboard-page-fill .dashboard-card-header .date-nav input {
-            height: 36px;
-            min-height: 36px;
-            padding-top: 0;
-            padding-bottom: 0;
-            font-size: 13px;
-            line-height: 1;
-            border-radius: 999px;
-          }
-
-          /* Tombol panah kiri/kanan: lingkaran 36x36 */
-          .dashboard-page-fill .dashboard-card-header .date-nav button:has(svg) {
-            width: 36px;
-            min-width: 36px;
-            padding: 0;
-          }
-
-          .dashboard-page-fill .dashboard-card-header .date-nav input {
-            padding-left: 12px;
-            padding-right: 12px;
+          /* Kontrol tanggal: satu baris penuh (diatur di DateNav) */
+          .dashboard-toolbar .date-nav {
+            flex: none;
+            width: 100%;
           }
 
           .resource-name-full {

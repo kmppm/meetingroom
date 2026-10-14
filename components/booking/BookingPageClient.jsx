@@ -5,8 +5,14 @@ import { useLanguage } from "@/components/layout/LanguageProvider";
 import { DateNav } from "@/components/ui/DateNav";
 import { BookingForm } from "@/components/booking/BookingForm";
 import { BookedSchedule } from "@/components/booking/BookedSchedule";
-import { DEFAULT_RESOURCE } from "@/lib/resources";
+import { RESOURCES, DEFAULT_RESOURCE } from "@/lib/resources";
 import { todayISO } from "@/lib/time";
+
+// Nama pendek khusus tampilan mobile, mis. "Ruangan Meeting Sadiman" -> "Ruangan Sadiman"
+function shortResourceName(name) {
+  const words = name.trim().split(/\s+/);
+  return words.length > 2 ? `${words[0]} ${words[words.length - 1]}` : name;
+}
 
 export function BookingPageClient({ session }) {
   const { t, locale } = useLanguage();
@@ -19,13 +25,21 @@ export function BookingPageClient({ session }) {
   const [resource, setResource] = useState("");
   const [viewResource, setViewResource] = useState(DEFAULT_RESOURCE);
 
+  // Mobile: dropdown ruangan di form disembunyikan (diganti segmented control
+  // di header), jadi ruangan default langsung dipilih supaya form siap dipakai.
+  useEffect(() => {
+    if (window.matchMedia("(max-width: 860px)").matches) {
+      setResource((r) => r || DEFAULT_RESOURCE);
+    }
+  }, []);
+
   // Pilih di dropdown form -> tab jadwal ikut berpindah.
   function handleResourceSelect(code) {
     setResource(code);
     setViewResource(code);
   }
 
-  // Klik tab jadwal -> dropdown form ikut terpilih.
+  // Klik tab jadwal / segmented control -> dropdown form ikut terpilih.
   function handleTabClick(code) {
     setViewResource(code);
     if (code !== resource) setResource(code);
@@ -57,7 +71,30 @@ export function BookingPageClient({ session }) {
             <p className="page-subtitle">{t.booking.subtitle}</p>
           </div>
 
-          <DateNav date={date} onChange={setDate} t={t} locale={locale} />
+          {/* Hanya tampil di mobile */}
+          <div className="booking-seg" role="tablist" aria-label={t.booking.title}>
+            {Object.values(RESOURCES).map((r) => (
+              <button
+                key={r.code}
+                type="button"
+                role="tab"
+                aria-selected={resource === r.code}
+                aria-label={r.name}
+                className={`booking-seg-btn${resource === r.code ? " is-active" : ""}`}
+                onClick={() => handleTabClick(r.code)}
+              >
+                {shortResourceName(r.name)}
+              </button>
+            ))}
+          </div>
+
+          <DateNav
+            date={date}
+            onChange={setDate}
+            t={t}
+            locale={locale}
+            mobileCompact
+          />
         </div>
 
         <div className="booking-card-body">
@@ -120,6 +157,11 @@ export function BookingPageClient({ session }) {
           padding: 20px;
         }
 
+        /* Segmented control ruangan: khusus mobile */
+        .booking-seg {
+          display: none;
+        }
+
         @media (max-width: 860px) {
           /* Card tetap diam setinggi area antara topbar dan bottom nav,
              hanya .booking-card-body yang discroll. */
@@ -137,55 +179,63 @@ export function BookingPageClient({ session }) {
           }
 
           .booking-card-header {
-            padding: 12px 14px;
+            padding: 12px;
           }
 
+          /* Judul disembunyikan secara visual (bottom nav sudah menandai
+             halaman aktif), tetap ada untuk screen reader. */
           .booking-card-header .page-header {
-            margin-bottom: 8px;
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            margin: -1px;
+            padding: 0;
+            overflow: hidden;
+            clip: rect(0 0 0 0);
+            white-space: nowrap;
+            border: 0;
           }
 
-          .booking-card-header .page-title {
-            font-size: 18px;
-            margin: 0;
-          }
-
-          .booking-card-header .page-subtitle {
-            display: none;
-          }
-
-          /* Kontrol tanggal: semua kapsul 36px, sama dengan halaman Dashboard */
-          .booking-page-fill .booking-card-header .date-nav {
-            gap: 8px;
-          }
-
-          .booking-page-fill .booking-card-header .date-nav-label {
-            display: none;
-          }
-
-          .booking-page-fill .booking-card-header .date-nav button,
-          .booking-page-fill .booking-card-header .date-nav input {
-            height: 36px;
-            min-height: 36px;
-            padding-top: 0;
-            padding-bottom: 0;
-            font-size: 13px;
-            line-height: 1;
+          /* ---------- Segmented control ruangan ---------- */
+          .booking-seg {
+            display: flex;
+            gap: 2px;
+            padding: 3px;
+            margin-bottom: 10px;
+            background: var(--color-panel);
+            border: 1px solid var(--color-line);
             border-radius: 999px;
           }
 
-          .booking-page-fill .booking-card-header .date-nav button:has(svg) {
-            width: 36px;
-            min-width: 36px;
-            padding: 0;
+          .booking-seg-btn {
+            flex: 1 1 0;
+            min-width: 0;
+            height: 36px;
+            padding: 0 8px;
+            border: none;
+            border-radius: 999px;
+            background: transparent;
+            color: var(--color-ink-soft);
+            font-family: inherit;
+            font-size: 13px;
+            font-weight: 600;
+            line-height: 1;
+            white-space: nowrap;
+            cursor: pointer;
           }
 
-          .booking-page-fill .booking-card-header .date-nav input {
-            padding-left: 12px;
-            padding-right: 12px;
+          .booking-seg-btn.is-active {
+            background: var(--color-ink);
+            color: #fff;
+          }
+
+          /* Kontrol tanggal: satu baris penuh (diatur di DateNav) */
+          .booking-card-header .date-nav {
+            width: 100%;
           }
 
           .booking-card-body {
-            padding: 12px;
+            padding: 14px;
             -webkit-overflow-scrolling: touch;
             overscroll-behavior: contain;
           }
@@ -193,7 +243,7 @@ export function BookingPageClient({ session }) {
           .two-col {
             display: flex;
             flex-direction: column;
-            gap: 20px;
+            gap: 16px;
             align-items: stretch;
           }
         }

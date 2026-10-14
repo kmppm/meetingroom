@@ -114,7 +114,8 @@ export function BookingForm({
       {error ? <div className="alert alert-error">{error}</div> : null}
       {success ? <div className="alert alert-success">{success}</div> : null}
 
-      <div className="form-field">
+      {/* booking-field-date: disembunyikan di mobile (tanggal diatur dari header halaman) */}
+      <div className="form-field booking-field-date">
         <label className="form-label">{t.common.date}</label>
         <input
           type="date"
@@ -136,7 +137,8 @@ export function BookingForm({
         />
       </div>
 
-      <div className="form-field">
+      {/* booking-field-resource: disembunyikan di mobile (diganti segmented control di header) */}
+      <div className="form-field booking-field-resource">
         <label className="form-label">{isEn ? "Room / Table" : "Ruangan / Meja"}</label>
         <select
           className="select"
@@ -218,12 +220,39 @@ export function BookingForm({
         }
 
         @media (max-width: 860px) {
-          /* Di mobile: card sendiri di dalam card utama (tanpa shadow). */
+          /* Di mobile: form tidak lagi jadi card sendiri (menghindari kartu
+             bersarang), cukup field di atas permukaan card utama. */
           .card.booking-form-card {
-            border: 1px solid var(--color-line);
-            border-radius: 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+            border: none;
+            border-radius: 0;
             box-shadow: none;
-            padding: 14px;
+            background: transparent;
+            padding: 0;
+          }
+
+          /* Tanggal & ruangan sudah diatur dari header halaman */
+          .booking-form-card .booking-field-date,
+          .booking-form-card .booking-field-resource {
+            display: none;
+          }
+
+          .booking-form-card .form-field {
+            margin: 0;
+          }
+
+          .booking-form-card .textarea {
+            min-height: 72px;
+          }
+
+          /* Tombol utama tetap terlihat saat form di-scroll */
+          .booking-form-card .btn-block {
+            position: sticky;
+            bottom: 8px;
+            z-index: 2;
+            box-shadow: 0 0 0 8px var(--color-surface);
           }
         }
       `}</style>

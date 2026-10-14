@@ -173,33 +173,33 @@ export function BookedSchedule({ bookings, loading, viewResource, onTabChange })
         }
 
         @media (max-width: 860px) {
-          /* Di mobile: card sendiri di dalam card utama (tanpa shadow). */
+          /* Di mobile: bukan card sendiri, cukup seksi dengan garis pemisah
+             di atasnya (menghindari kartu bersarang). */
           .card.booking-list-card {
-            border: 1px solid var(--color-line);
-            border-radius: 12px;
+            border: none;
+            border-top: 1px solid var(--color-line);
+            border-radius: 0;
             box-shadow: none;
-            padding: 14px;
+            background: transparent;
+            padding: 16px 0 0;
           }
 
-          /* Tab ruangan: satu baris, nama pendek, tinggi 36px */
+          .booked-title {
+            margin-bottom: 4px;
+          }
+
+          /* Ruangan dipilih lewat segmented control di header halaman */
           .booked-tabs {
-            flex-wrap: nowrap;
-            gap: 6px;
+            display: none;
           }
 
-          .booked-tabs .booked-tab {
-            flex: 1 1 0;
-            min-width: 0;
-            height: 36px;
-            padding: 0 8px;
-            font-size: 13px;
-            line-height: 1;
-            white-space: nowrap;
+          /* Nomor urut disembunyikan: jam, keperluan, dan unit sudah cukup */
+          .booked-no {
+            display: none;
           }
 
-          /* Item booking: nomor di kiri, jam, keperluan, lalu unit */
           .booked-item {
-            gap: 8px;
+            gap: 10px;
           }
 
           .booked-time {
@@ -207,12 +207,8 @@ export function BookedSchedule({ bookings, loading, viewResource, onTabChange })
             padding: 4px 10px;
           }
 
-          .booked-name-full {
-            display: none;
-          }
-
-          .booked-name-short {
-            display: inline;
+          .booking-list-card .empty-state {
+            padding: 20px 0 8px;
           }
         }
       `}</style>
