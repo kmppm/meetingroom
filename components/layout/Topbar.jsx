@@ -205,30 +205,15 @@ export function Topbar({ session, onRequestLogin }) {
         }
 
         @media (max-width: 860px) {
+          /* Di mobile isi topbar dipindah ke tombol akun di bar bawah
+             (bahasa + akun), pencarian dihapus. Yang tersisa hanya
+             spacer tipis di atas kartu (plus safe-area untuk notch). */
           .topbar {
-            padding: 0 16px;
-            gap: 10px;
-          }
-
-          .search-pill {
-            min-width: 0;
-            flex: 1;
-            padding: 0 14px;
-          }
-
-          .topbar-identity-text {
-            display: none;
-          }
-        }
-
-        @media (max-width: 480px) {
-          .search-pill {
-            width: 38px;
+            height: calc(8px + env(safe-area-inset-top, 0px));
             padding: 0;
-            justify-content: center;
           }
 
-          .search-pill span {
+          .topbar > * {
             display: none;
           }
         }

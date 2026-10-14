@@ -7,53 +7,66 @@ import { RiLogoutCircleRLine } from "react-icons/ri";
 import { AiOutlineLogin } from "react-icons/ai";
 import { IconlyCategory, IconlyCalendar, IconlyPaper } from "./IconlyIcons";
 import { useLanguage } from "./LanguageProvider";
+import { getUnitMeta } from "@/lib/units";
 
 const ICON_SIZE = 20;
 
-// Label pendek untuk bottom nav mobile, mengikuti bahasa aplikasi.
+// Label khusus mobile (bottom nav + menu akun), mengikuti bahasa aplikasi.
 const MOBILE_LABELS = {
-  en: { home: "Home", booking: "Book", orders: "Orders", logoutHint: "Tap again to log out" },
+  en: {
+    home: "Home",
+    booking: "Book",
+    orders: "Orders",
+    language: "Language",
+    account: "Account menu",
+    guest: "Guest",
+  },
   id: {
     home: "Beranda",
     booking: "Pesan",
     orders: "Saya",
     ordersAdmin: "Semua",
-    logoutHint: "Ketuk lagi untuk keluar",
+    language: "Bahasa",
+    account: "Menu akun",
+    guest: "Tamu",
   },
 };
 
 export function Sidebar({ session, t, onRequestLogin }) {
   const pathname = usePathname();
   const router = useRouter();
-  const { locale } = useLanguage();
+  const { locale, toggleLocale } = useLanguage();
   const labels = locale === "en" ? MOBILE_LABELS.en : MOBILE_LABELS.id;
-  const [confirming, setConfirming] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
 
-  // Konfirmasi logout di mobile otomatis batal setelah 3 detik.
+  const unitMeta = session ? getUnitMeta(session.unit) : null;
+  const isAdmin = session?.role === "admin";
+
+  // Menu akun (mobile) tertutup saat pindah halaman atau menekan Escape.
   useEffect(() => {
-    if (!confirming) return;
-    const id = setTimeout(() => setConfirming(false), 3000);
-    return () => clearTimeout(id);
-  }, [confirming]);
+    setMenuOpen(false);
+  }, [pathname]);
+
+  useEffect(() => {
+    if (!menuOpen) return;
+    function onKey(e) {
+      if (e.key === "Escape") setMenuOpen(false);
+    }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [menuOpen]);
 
   async function handleLogout() {
+    setMenuOpen(false);
     await fetch("/api/auth/logout", { method: "POST" });
     router.push("/dashboard");
     router.refresh();
   }
 
-  // Desktop: langsung logout. Mobile: ketuk dua kali supaya tidak kepencet.
-  function handleLogoutClick() {
-    const isMobile = window.matchMedia("(max-width: 860px)").matches;
-    if (isMobile && !confirming) {
-      setConfirming(true);
-      return;
-    }
-    setConfirming(false);
-    handleLogout();
+  function handleMenuLogin() {
+    setMenuOpen(false);
+    onRequestLogin();
   }
-
-  const isAdmin = session?.role === "admin";
 
   const navItems = [
     {
@@ -78,6 +91,9 @@ export function Sidebar({ session, t, onRequestLogin }) {
       requiresAuth: true,
     },
   ];
+
+  const avatarStyle = { background: session ? unitMeta?.color : "#9ca3af" };
+  const avatarText = session ? unitMeta?.initials : null;
 
   return (
     <aside className="sidebar">
@@ -112,32 +128,117 @@ export function Sidebar({ session, t, onRequestLogin }) {
         })}
       </nav>
       <div className="sidebar-footer">
+        {/* Desktop: tombol logout / login seperti semula */}
         {session ? (
           <button
-            className={`sidebar-logout is-logout${confirming ? " is-confirming" : ""}`}
-            onClick={handleLogoutClick}
-            aria-label={t.nav.logout}
+            className="sidebar-logout is-logout"
+            onClick={handleLogout}
             type="button"
           >
             <RiLogoutCircleRLine size={ICON_SIZE} />
-            <span className="sidebar-logout-label">{t.nav.logout}</span>
-            {confirming ? (
-              <span className="sidebar-logout-hint" role="status">
-                {labels.logoutHint}
-              </span>
-            ) : null}
+            <span>{t.nav.logout}</span>
           </button>
         ) : (
           <button
             className="sidebar-logout"
             onClick={onRequestLogin}
-            aria-label={t.login.submit}
             type="button"
           >
             <AiOutlineLogin size={ICON_SIZE} />
-            <span className="sidebar-logout-label">{t.login.submit}</span>
+            <span>{t.login.submit}</span>
           </button>
         )}
+
+        {/* Mobile: tombol akun bulat + menu (bahasa, logout/login) */}
+        <div className="sidebar-account">
+          <button
+            type="button"
+            className={`sidebar-account-btn${menuOpen ? " is-open" : ""}`}
+            aria-label={labels.account}
+            aria-haspopup="menu"
+            aria-expanded={menuOpen}
+            onClick={() => setMenuOpen((o) => !o)}
+          >
+            <span className="sidebar-account-avatar" style={avatarStyle}>
+              {avatarText || <IconPerson />}
+            </span>
+          </button>
+
+          {menuOpen ? (
+            <>
+              <div
+                className="sidebar-account-backdrop"
+                onClick={() => setMenuOpen(false)}
+              />
+              <div className="sidebar-account-menu" role="menu">
+                <div className="sidebar-account-who">
+                  <span
+                    className="sidebar-account-avatar is-sm"
+                    style={avatarStyle}
+                  >
+                    {avatarText || <IconPerson />}
+                  </span>
+                  <span className="sidebar-account-who-text">
+                    <span className="sidebar-account-name">
+                      {session ? unitMeta?.name : labels.guest}
+                    </span>
+                    {isAdmin ? (
+                      <span className="sidebar-account-role">Admin</span>
+                    ) : null}
+                  </span>
+                </div>
+
+                <div className="sidebar-account-row">
+                  <span className="sidebar-account-row-label">
+                    {labels.language}
+                  </span>
+                  <div className="sidebar-account-seg" role="group">
+                    <button
+                      type="button"
+                      className={locale === "en" ? "is-active" : ""}
+                      aria-pressed={locale === "en"}
+                      onClick={() => locale !== "en" && toggleLocale()}
+                    >
+                      EN
+                    </button>
+                    <button
+                      type="button"
+                      className={locale === "id" ? "is-active" : ""}
+                      aria-pressed={locale === "id"}
+                      onClick={() => locale !== "id" && toggleLocale()}
+                    >
+                      ID
+                    </button>
+                  </div>
+                </div>
+
+                <div className="sidebar-account-divider" />
+
+                {session ? (
+                  <button
+                    type="button"
+                    role="menuitem"
+                    className="sidebar-account-action is-logout"
+                    onClick={handleLogout}
+                  >
+                    <RiLogoutCircleRLine size={ICON_SIZE} />
+                    <span>{t.nav.logout}</span>
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    role="menuitem"
+                    className="sidebar-account-action"
+                    onClick={handleMenuLogin}
+                  >
+                    <AiOutlineLogin size={ICON_SIZE} />
+                    <span>{t.login.submit}</span>
+                  </button>
+                )}
+              </div>
+            </>
+          ) : null}
+        </div>
       </div>
 
       <style jsx global>{`
@@ -241,13 +342,13 @@ export function Sidebar({ session, t, onRequestLogin }) {
           color: #b91c1c;
         }
 
-        /* Petunjuk konfirmasi logout: khusus mobile */
-        .sidebar-logout-hint {
+        /* Tombol akun + menu: khusus mobile */
+        .sidebar-account {
           display: none;
         }
 
         @media (max-width: 860px) {
-          /* Dua elemen melayang berdampingan: kapsul navigasi + tombol logout bulat */
+          /* Dua elemen melayang berdampingan: kapsul navigasi + tombol akun bulat */
           .sidebar {
             position: fixed;
             top: auto;
@@ -332,7 +433,7 @@ export function Sidebar({ session, t, onRequestLogin }) {
             font-weight: 700;
           }
 
-          /* ---------- Tombol logout / login bulat ---------- */
+          /* ---------- Tombol akun bulat ---------- */
           .sidebar-footer {
             position: relative;
             flex: 0 0 56px;
@@ -341,50 +442,172 @@ export function Sidebar({ session, t, onRequestLogin }) {
             align-items: stretch;
           }
 
-          .sidebar-logout {
-            width: 56px;
-            height: 56px;
-            padding: 0;
-            justify-content: center;
-            gap: 0;
-            border: 1px solid var(--color-line);
-            border-radius: 50%;
-            background: var(--color-surface, #ffffff);
-          }
-
-          .sidebar-logout:hover {
-            background: var(--color-surface, #ffffff);
-          }
-
-          .sidebar-logout-label {
+          /* Tombol logout/login versi desktop disembunyikan di mobile */
+          .sidebar-footer > .sidebar-logout {
             display: none;
           }
 
-          .sidebar-logout svg {
-            width: 22px;
-            height: 22px;
+          .sidebar-account {
+            display: flex;
+            position: relative;
+            flex: 1 1 0;
           }
 
-          /* Ketukan pertama: tombol jadi merah penuh + petunjuk di atasnya */
-          .sidebar-logout.is-logout.is-confirming,
-          .sidebar-logout.is-logout.is-confirming:hover {
-            background: #dc2626;
-            border-color: #dc2626;
+          .sidebar-account-btn {
+            width: 56px;
+            height: 56px;
+            padding: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid var(--color-line);
+            border-radius: 50%;
+            background: var(--color-surface, #ffffff);
+            cursor: pointer;
+          }
+
+          .sidebar-account-btn.is-open {
+            border-color: var(--color-ink, #111111);
+          }
+
+          .sidebar-account-avatar {
+            width: 38px;
+            height: 38px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
             color: #ffffff;
+            font-size: 13px;
+            font-weight: 700;
+            letter-spacing: 0.02em;
           }
 
-          .sidebar-logout-hint {
-            display: block;
+          .sidebar-account-avatar.is-sm {
+            width: 34px;
+            height: 34px;
+            font-size: 12px;
+          }
+
+          /* ---------- Menu akun (tanpa shadow, cukup garis tepi) ---------- */
+          .sidebar-account-backdrop {
+            position: fixed;
+            inset: 0;
+            z-index: 1;
+            background: transparent;
+          }
+
+          .sidebar-account-menu {
             position: absolute;
             right: 0;
             bottom: calc(100% + 10px);
-            padding: 7px 12px;
-            border-radius: 10px;
+            z-index: 2;
+            width: 248px;
+            max-width: calc(100vw - 32px);
+            padding: 6px;
+            background: var(--color-surface, #ffffff);
+            border: 1px solid var(--color-line-strong);
+            border-radius: 18px;
+          }
+
+          .sidebar-account-who {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px;
+          }
+
+          .sidebar-account-who-text {
+            display: flex;
+            flex-direction: column;
+            min-width: 0;
+          }
+
+          .sidebar-account-name {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--color-ink);
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+          }
+
+          .sidebar-account-role {
+            font-size: 12px;
+            color: var(--color-ink-soft);
+          }
+
+          .sidebar-account-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            padding: 6px 10px;
+          }
+
+          .sidebar-account-row-label {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--color-ink-soft);
+          }
+
+          .sidebar-account-seg {
+            display: flex;
+            gap: 2px;
+            padding: 2px;
+            background: var(--color-panel);
+            border: 1px solid var(--color-line);
+            border-radius: 999px;
+          }
+
+          .sidebar-account-seg button {
+            width: 40px;
+            height: 30px;
+            border: none;
+            border-radius: 999px;
+            background: transparent;
+            color: var(--color-ink-soft);
+            font-family: inherit;
+            font-size: 12px;
+            font-weight: 700;
+            cursor: pointer;
+          }
+
+          .sidebar-account-seg button.is-active {
             background: var(--color-ink, #111111);
             color: #ffffff;
-            font-size: 12px;
+          }
+
+          .sidebar-account-divider {
+            height: 1px;
+            margin: 6px 4px;
+            background: var(--color-line);
+          }
+
+          .sidebar-account-action {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            width: 100%;
+            padding: 12px 10px;
+            border: none;
+            border-radius: 12px;
+            background: transparent;
+            color: var(--color-ink);
+            font-family: inherit;
+            font-size: 14px;
             font-weight: 600;
-            white-space: nowrap;
+            text-align: left;
+            cursor: pointer;
+          }
+
+          .sidebar-account-action.is-logout {
+            color: #dc2626;
+          }
+
+          .sidebar-account-action:active {
+            background: var(--color-panel);
           }
         }
 
@@ -395,5 +618,24 @@ export function Sidebar({ session, t, onRequestLogin }) {
         }
       `}</style>
     </aside>
+  );
+}
+
+function IconPerson() {
+  return (
+    <svg
+      width="20"
+      height="20"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <circle cx="12" cy="8" r="4" />
+      <path d="M4 21c0-4 3.5-7 8-7s8 3 8 7" />
+    </svg>
   );
 }

@@ -246,14 +246,6 @@ export function BookingForm({
           .booking-form-card .textarea {
             min-height: 72px;
           }
-
-          /* Tombol utama tetap terlihat saat form di-scroll */
-          .booking-form-card .btn-block {
-            position: sticky;
-            bottom: 8px;
-            z-index: 2;
-            box-shadow: 0 0 0 8px var(--color-surface);
-          }
         }
       `}</style>
     </form>
