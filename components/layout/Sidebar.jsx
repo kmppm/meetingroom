@@ -10,7 +10,7 @@ import {
   IconlyCalendar,
   IconlyPaper,
   IconlyDocument,
-  IconlyMoreCircle,
+  IconlyDownload,
 } from "./IconlyIcons";
 import { useLanguage } from "./LanguageProvider";
 import { useInstall } from "./InstallProvider";
@@ -185,7 +185,7 @@ export function Sidebar({ session, t, onRequestLogin }) {
             className="sidebar-link is-desktop-only"
             onClick={handleInstall}
           >
-            <IconlyMoreCircle size={ICON_SIZE} color="currentColor" />
+            <IconlyDownload size={ICON_SIZE} color="currentColor" />
             <span className="sidebar-link-label">{extraLabels.install}</span>
           </button>
         ) : null}
