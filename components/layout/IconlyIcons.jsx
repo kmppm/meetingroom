@@ -69,3 +69,27 @@ export const IconlyDownload = ({ size = 24, color = "#000000" }) => {
     </svg>
   );
 };
+
+export const IconlyLogin = ({ size = 24, color = "#000000" }) => {
+  return (
+    <svg width={size} height={size} viewBox="0 0 25 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M5.09356 12.12H2.94556" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"></path>
+      <path d="M14.9864 12.12H8.11938" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"></path>
+      <path d="M12.0593 9.20007L14.9873 12.1201L12.0593 15.0401" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"></path>
+      <path d="M21.4893 15.7679C21.2433 19.8049 20.0693 21.2499 14.4543 21.2499C9.12435 21.2499 7.78435 19.9499 7.45435 16.3699" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"></path>
+      <path d="M7.45435 7.63012C7.78435 4.05012 9.12435 2.75012 14.4543 2.75012C21.5543 2.75012 21.5543 5.06012 21.5543 12.0001" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"></path>
+    </svg>
+  );
+};
+
+export const IconlyLogout = ({ size = 24, color = "#000000" }) => {
+  return (
+    <svg width={size} height={size} viewBox="0 0 25 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M11.9771 12.1201H9.97412" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"></path>
+      <path d="M22.0153 12.1201H15.0103" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"></path>
+      <path d="M19.0884 9.19995L22.0164 12.12L19.0884 15.04" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"></path>
+      <path d="M2.4834 12C2.4834 18.94 2.4834 21.25 9.5844 21.25C14.9144 21.25 16.2544 19.95 16.5844 16.37" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"></path>
+      <path d="M16.5845 7.63C16.2545 4.05 14.9145 2.75 9.58452 2.75C4.06052 2.75 2.83352 4.148 2.56152 8.036" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"></path>
+    </svg>
+  );
+};

@@ -6,6 +6,7 @@ import { useLoginModal } from "@/components/layout/LoginModalContext";
 import { DateNav } from "@/components/ui/DateNav";
 import { ScheduleGrid } from "./ScheduleGrid";
 import { ScheduleSkeleton } from "./ScheduleSkeleton";
+import { NextSlotBanner } from "./NextSlotBanner";
 import { BookingModal } from "@/components/booking/BookingModal";
 import { RESOURCES, DEFAULT_RESOURCE } from "@/lib/resources";
 import { todayISO } from "@/lib/time";
@@ -180,6 +181,15 @@ export function DashboardClient({ session }) {
               mobileCompact
             />
           </div>
+
+          <NextSlotBanner
+            date={date}
+            loading={loading}
+            bookingsByResource={bookingsByResource}
+            locale={locale}
+            session={session}
+            onBook={handleSlotClick}
+          />
         </div>
 
         <div className="dashboard-card-body">

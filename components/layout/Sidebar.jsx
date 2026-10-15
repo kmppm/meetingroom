@@ -3,14 +3,14 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { RiLogoutCircleRLine } from "react-icons/ri";
-import { AiOutlineLogin } from "react-icons/ai";
 import {
   IconlyCategory,
   IconlyCalendar,
   IconlyPaper,
   IconlyDocument,
   IconlyDownload,
+  IconlyLogin,
+  IconlyLogout,
 } from "./IconlyIcons";
 import { useLanguage } from "./LanguageProvider";
 import { useInstall } from "./InstallProvider";
@@ -198,7 +198,7 @@ export function Sidebar({ session, t, onRequestLogin }) {
             onClick={handleLogout}
             type="button"
           >
-            <RiLogoutCircleRLine size={ICON_SIZE} />
+            <IconlyLogout size={ICON_SIZE} color="currentColor" />
             <span>{t.nav.logout}</span>
           </button>
         ) : (
@@ -207,7 +207,7 @@ export function Sidebar({ session, t, onRequestLogin }) {
             onClick={onRequestLogin}
             type="button"
           >
-            <AiOutlineLogin size={ICON_SIZE} />
+            <IconlyLogin size={ICON_SIZE} color="currentColor" />
             <span>{t.login.submit}</span>
           </button>
         )}
@@ -284,7 +284,7 @@ export function Sidebar({ session, t, onRequestLogin }) {
                     className="sidebar-account-action is-logout"
                     onClick={handleLogout}
                   >
-                    <RiLogoutCircleRLine size={ICON_SIZE} />
+                    <IconlyLogout size={ICON_SIZE} color="currentColor" />
                     <span>{t.nav.logout}</span>
                   </button>
                 ) : (
@@ -294,7 +294,7 @@ export function Sidebar({ session, t, onRequestLogin }) {
                     className="sidebar-account-action"
                     onClick={handleMenuLogin}
                   >
-                    <AiOutlineLogin size={ICON_SIZE} />
+                    <IconlyLogin size={ICON_SIZE} color="currentColor" />
                     <span>{t.login.submit}</span>
                   </button>
                 )}
