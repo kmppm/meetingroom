@@ -43,7 +43,7 @@ const TOUR_LABELS = {
     title: "Panduan banner",
     step1: "Klik di sini untuk langsung memesan jam kosong ini.",
     step2:
-      "Klik tanda silang untuk menutup banner ini. Banner ruangan lain akan tampil bergantian.",
+      "Klik tanda silang untuk menutup banner. Kedua ruangan akan ikut tertutup.",
     skip: "Lewati",
     next: "Lanjut",
     done: "Mengerti",
@@ -52,7 +52,7 @@ const TOUR_LABELS = {
     title: "Banner guide",
     step1: "Click here to book this available time right away.",
     step2:
-      "Click the cross to close this banner. The other room's banner will show in turn.",
+      "Click the cross to close the banner. Both rooms will be closed together.",
     skip: "Skip",
     next: "Next",
     done: "Got it",
@@ -234,6 +234,12 @@ export function NextSlotBanner({
     setClosed((prev) => [...prev, code]);
   }
 
+  // Tombol silang: menutup semua banner sekaligus (kedua ruangan)
+  function closeAll() {
+    setTourStep(null);
+    setEnabled(false);
+  }
+
   function handleBook(slot) {
     closeSlot(slot.resource);
     onBook(slot.resource, slot.start);
@@ -326,7 +332,7 @@ export function NextSlotBanner({
                     showTourClose ? " is-tour-target" : ""
                   }`}
                   aria-label={labels.close}
-                  onClick={() => closeSlot(slot.resource)}
+                  onClick={closeAll}
                 >
                   <svg
                     width="16"
