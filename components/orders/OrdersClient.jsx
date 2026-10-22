@@ -14,6 +14,14 @@ function isPastBooking(booking) {
   return booking.endMinutes <= now.getHours() * 60 + now.getMinutes();
 }
 
+// Sedang berlangsung: hari ini, sudah lewat jam mulai tapi belum jam selesai
+function isOngoingBooking(booking) {
+  if (booking.date !== todayISO()) return false;
+  const now = new Date();
+  const nowMinutes = now.getHours() * 60 + now.getMinutes();
+  return booking.startMinutes <= nowMinutes && nowMinutes < booking.endMinutes;
+}
+
 // Tanggal singkat, contoh: "Rab, 14 Okt 2026" (ID) / "Wed, Oct 14, 2026" (EN)
 function formatDateShort(dateStr, locale) {
   const [y, m, d] = dateStr.split("-").map(Number);
@@ -29,6 +37,7 @@ export function OrdersClient({ session }) {
   const resourceLabel = locale === "en" ? "Room / Table" : "Ruangan / Meja";
   const todayLabel = locale === "en" ? "Today" : "Hari ini";
   const allOrdersLabel = locale === "en" ? "All orders" : "Semua pesanan";
+  const ongoingLabel = locale === "en" ? "In progress" : "Sedang berlangsung";
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [pendingCancel, setPendingCancel] = useState(null);
@@ -37,6 +46,12 @@ export function OrdersClient({ session }) {
   // Tanggal filter diisi setelah mount supaya tidak beda antara server dan browser
   const [selectedDate, setSelectedDate] = useState("");
   const [showAll, setShowAll] = useState(false);
+  // Render ulang tiap 30 detik supaya status (akan datang / berlangsung / selesai) tetap akurat
+  const [, setTick] = useState(0);
+  useEffect(() => {
+    const id = setInterval(() => setTick((n) => n + 1), 30000);
+    return () => clearInterval(id);
+  }, []);
 
   async function load() {
     setLoading(true);
@@ -124,6 +139,7 @@ export function OrdersClient({ session }) {
               const meta = getUnitMeta(b.unit);
               const resourceMeta = getResourceMeta(b.resource);
               const canCancel = !finished && (isAdmin || b.unit === session.unit);
+              const ongoing = !finished && isOngoingBooking(b);
               return (
                 <tr key={b.id}>
                   <td className="col-index">
@@ -150,10 +166,18 @@ export function OrdersClient({ session }) {
                   <td data-label={t.common.status}>
                     <span
                       className={`status-badge ${
-                        finished ? "status-past" : "status-upcoming"
+                        finished
+                          ? "status-past"
+                          : ongoing
+                          ? "status-ongoing"
+                          : "status-upcoming"
                       }`}
                     >
-                      {finished ? t.common.past : t.common.upcoming}
+                      {finished
+                        ? t.common.past
+                        : ongoing
+                        ? ongoingLabel
+                        : t.common.upcoming}
                     </span>
                   </td>
                   <td data-label={t.common.action} className="col-action">
@@ -389,6 +413,33 @@ export function OrdersClient({ session }) {
         .status-upcoming {
           background: var(--color-success-soft);
           color: var(--color-success);
+        }
+
+        /* Sedang berlangsung: abu-abu netral dengan titik berkedip */
+        .status-ongoing {
+          background: var(--color-panel);
+          color: var(--color-ink);
+          border: 1px solid var(--color-line-strong);
+        }
+
+        .status-ongoing::before {
+          animation: status-ongoing-blink 1.4s ease-in-out infinite;
+        }
+
+        @keyframes status-ongoing-blink {
+          0%,
+          100% {
+            opacity: 1;
+          }
+          50% {
+            opacity: 0.25;
+          }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+          .status-ongoing::before {
+            animation: none;
+          }
         }
 
         .status-past {

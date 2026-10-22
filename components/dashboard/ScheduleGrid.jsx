@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { getUnitMeta } from "@/lib/units";
 import { getResourceMeta } from "@/lib/resources";
+import { isRedDate } from "@/components/ui/DateNav";
 import {
   SLOT_STEP_MINUTES,
   generateGridSlots,
@@ -153,6 +154,8 @@ function formatRemaining(minutes, locale) {
 
 export function ScheduleGrid({ date, bookings, onSlotClick, t, locale }) {
   const segments = buildSegments(bookings);
+  // Akhir pekan / libur nasional / cuti bersama: grid diberi nuansa merah lembut
+  const redDay = isRedDate(date);
   const [tip, setTip] = useState(null);
   // Render ulang tiap 30 detik supaya status & sisa waktu tetap akurat
   const [, setTick] = useState(0);
@@ -187,7 +190,7 @@ export function ScheduleGrid({ date, bookings, onSlotClick, t, locale }) {
   const tipUnit = tipBooking ? getUnitMeta(tipBooking.unit) : null;
 
   return (
-    <div className="schedule-card">
+    <div className={`schedule-card${redDay ? " is-red-day" : ""}`}>
       <div className="schedule">
         {segments.map((seg) => {
           const timeLabel = `${minutesToTime(seg.startMinutes)}–${minutesToTime(
@@ -478,6 +481,27 @@ export function ScheduleGrid({ date, bookings, onSlotClick, t, locale }) {
           font-weight: 600;
           color: var(--color-ink);
           word-break: break-word;
+        }
+
+        /* ---------- Tanggal merah (akhir pekan / libur): nuansa merah lembut ---------- */
+
+        .schedule-card.is-red-day {
+          --grid-red: var(--color-danger, #d92d20);
+          border-color: color-mix(in srgb, var(--grid-red) 24%, var(--color-surface));
+        }
+
+        .schedule-card.is-red-day .schedule-row {
+          border-top-color: color-mix(in srgb, var(--grid-red) 14%, var(--color-surface));
+        }
+
+        .schedule-card.is-red-day .schedule-row:first-child {
+          border-top: none;
+        }
+
+        .schedule-card.is-red-day .schedule-time {
+          color: color-mix(in srgb, var(--grid-red) 88%, #000);
+          background: color-mix(in srgb, var(--grid-red) 7%, var(--color-surface));
+          border-color: color-mix(in srgb, var(--grid-red) 30%, var(--color-surface));
         }
 
         /* ---------- Baris yang sedang berlangsung (nyala satu grid) ---------- */
