@@ -11,6 +11,60 @@ import { BookingModal } from "@/components/booking/BookingModal";
 import { RESOURCES, DEFAULT_RESOURCE } from "@/lib/resources";
 import { todayISO } from "@/lib/time";
 
+// Daftar hari libur nasional & cuti bersama (sumber: SKB 3 Menteri tahun 2026).
+// Format kunci: "YYYY-MM-DD". type: "national" = libur nasional,
+// "leave" = cuti bersama. Tahun berikutnya tinggal tambah/ganti daftar ini.
+// Sabtu & Minggu tidak perlu dimasukkan, sudah terdeteksi otomatis.
+const HOLIDAYS = {
+  "2026-01-01": { type: "national", id: "Tahun Baru 2026 Masehi", en: "New Year's Day" },
+  "2026-01-16": { type: "national", id: "Isra Mikraj Nabi Muhammad SAW", en: "Isra Mi'raj" },
+  "2026-02-16": { type: "leave", id: "Tahun Baru Imlek", en: "Chinese New Year" },
+  "2026-02-17": { type: "national", id: "Tahun Baru Imlek 2577 Kongzili", en: "Chinese New Year" },
+  "2026-03-18": { type: "leave", id: "Hari Suci Nyepi", en: "Nyepi" },
+  "2026-03-19": { type: "national", id: "Hari Suci Nyepi", en: "Nyepi" },
+  "2026-03-20": { type: "leave", id: "Idul Fitri 1447 H", en: "Eid al-Fitr" },
+  "2026-03-21": { type: "national", id: "Idul Fitri 1447 H", en: "Eid al-Fitr" },
+  "2026-03-22": { type: "national", id: "Idul Fitri 1447 H", en: "Eid al-Fitr" },
+  "2026-03-23": { type: "leave", id: "Idul Fitri 1447 H", en: "Eid al-Fitr" },
+  "2026-03-24": { type: "leave", id: "Idul Fitri 1447 H", en: "Eid al-Fitr" },
+  "2026-04-03": { type: "national", id: "Wafat Yesus Kristus", en: "Good Friday" },
+  "2026-04-05": { type: "national", id: "Paskah", en: "Easter" },
+  "2026-05-01": { type: "national", id: "Hari Buruh Internasional", en: "Labour Day" },
+  "2026-05-14": { type: "national", id: "Kenaikan Yesus Kristus", en: "Ascension Day" },
+  "2026-05-15": { type: "leave", id: "Kenaikan Yesus Kristus", en: "Ascension Day" },
+  "2026-05-27": { type: "national", id: "Idul Adha 1447 H", en: "Eid al-Adha" },
+  "2026-05-28": { type: "leave", id: "Idul Adha 1447 H", en: "Eid al-Adha" },
+  "2026-05-31": { type: "national", id: "Hari Raya Waisak", en: "Vesak Day" },
+  "2026-06-01": { type: "national", id: "Hari Lahir Pancasila", en: "Pancasila Day" },
+  "2026-06-16": { type: "national", id: "Tahun Baru Islam 1448 H", en: "Islamic New Year" },
+  "2026-08-17": { type: "national", id: "Hari Kemerdekaan RI", en: "Independence Day" },
+  "2026-08-25": { type: "national", id: "Maulid Nabi Muhammad SAW", en: "Prophet's Birthday" },
+  "2026-12-24": { type: "leave", id: "Natal", en: "Christmas" },
+  "2026-12-25": { type: "national", id: "Hari Raya Natal", en: "Christmas Day" },
+};
+
+// Info penanda untuk tanggal terpilih (null = hari kerja biasa)
+function getDayInfo(date, locale) {
+  const en = locale === "en";
+  const holiday = HOLIDAYS[date];
+
+  if (holiday) {
+    const name = en ? holiday.en : holiday.id;
+    if (holiday.type === "leave") {
+      return { label: `${en ? "Collective leave" : "Cuti bersama"}: ${name}` };
+    }
+    return { label: `${en ? "Public holiday" : "Libur nasional"}: ${name}` };
+  }
+
+  // Tanpa zona waktu: baca sebagai tanggal lokal supaya hari tidak bergeser
+  const day = new Date(`${date}T00:00:00`).getDay();
+  if (day === 0 || day === 6) {
+    return { label: en ? "Weekend" : "Akhir pekan" };
+  }
+
+  return null;
+}
+
 // Nama pendek khusus tampilan mobile, mis. "Ruangan Meeting Sadiman" -> "Ruangan Sadiman"
 function shortResourceName(name) {
   const words = name.trim().split(/\s+/);
@@ -135,6 +189,9 @@ export function DashboardClient({ session }) {
     setModalTarget({ resource: resourceCode, start: startTime });
   }
 
+  // Penanda akhir pekan / hari libur untuk tanggal yang sedang dipilih
+  const dayInfo = getDayInfo(date, locale);
+
   return (
     <div className="dashboard-page-fill">
       <div className="dashboard-card">
@@ -181,6 +238,13 @@ export function DashboardClient({ session }) {
               mobileCompact
             />
           </div>
+
+          {dayInfo ? (
+            <div className="dashboard-day-note" role="status">
+              <span className="dashboard-day-note-dot" aria-hidden="true" />
+              <span>{dayInfo.label}</span>
+            </div>
+          ) : null}
 
           <NextSlotBanner
             date={date}
@@ -289,6 +353,29 @@ export function DashboardClient({ session }) {
           flex: 1 1 460px;
           min-width: 0;
           margin-bottom: 0;
+        }
+
+        /* Penanda akhir pekan / hari libur */
+        .dashboard-day-note {
+          display: inline-flex;
+          align-items: center;
+          gap: 8px;
+          margin-top: 10px;
+          padding: 4px 12px;
+          font-size: 12px;
+          font-weight: 600;
+          color: var(--color-ink-soft);
+          background: var(--color-panel);
+          border: 1px solid var(--color-line-strong);
+          border-radius: 999px;
+        }
+
+        .dashboard-day-note-dot {
+          width: 6px;
+          height: 6px;
+          border-radius: 50%;
+          background: var(--color-ink-soft);
+          flex-shrink: 0;
         }
 
         .dashboard-card-body {

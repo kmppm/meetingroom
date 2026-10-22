@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { getUnitMeta } from "@/lib/units";
 import { getResourceMeta } from "@/lib/resources";
@@ -20,17 +20,25 @@ const TIP_LABELS = {
     resource: "Ruangan / Meja",
     bookedBy: "Dipesan oleh",
     createdBy: "Dibuat oleh",
+    status: "Status",
+    ongoing: "Sedang berlangsung",
+    finished: "Sudah selesai",
+    timeLeft: "Sisa waktu",
   },
   en: {
     time: "Time",
     resource: "Room / Table",
     bookedBy: "Booked by",
     createdBy: "Created by",
+    status: "Status",
+    ongoing: "In progress",
+    finished: "Finished",
+    timeLeft: "Time left",
   },
 };
 
 const TIP_WIDTH = 300;
-const TIP_EST_HEIGHT = 190;
+const TIP_EST_HEIGHT = 242;
 
 // Keperluan di slot ditampilkan maksimal sekian kata, sisanya jadi "…"
 // (teks lengkap tetap muncul di tooltip saat hover). Ubah angkanya kalau perlu.
@@ -106,9 +114,52 @@ function isPastSlot(date, startMinutes) {
   return startMinutes < now.getHours() * 60 + now.getMinutes();
 }
 
+// Status pesanan untuk tooltip:
+// "ongoing"  = sekarang sedang berlangsung
+// "finished" = sudah lewat / selesai
+// null       = belum mulai (tidak menampilkan status)
+function getBookingStatus(date, booking) {
+  const today = todayISO();
+  if (date < today) return "finished";
+  if (date > today) return null;
+
+  const now = new Date();
+  const nowMinutes = now.getHours() * 60 + now.getMinutes();
+  if (nowMinutes >= booking.endMinutes) return "finished";
+  if (nowMinutes >= booking.startMinutes) return "ongoing";
+  return null;
+}
+
+// Sisa waktu untuk pesanan yang sedang berlangsung
+function getOngoingInfo(booking) {
+  const now = new Date();
+  const nowMinutes = now.getHours() * 60 + now.getMinutes();
+  const remaining = Math.max(0, booking.endMinutes - nowMinutes);
+  return { remaining };
+}
+
+function formatRemaining(minutes, locale) {
+  const h = Math.floor(minutes / 60);
+  const m = minutes % 60;
+  if (locale === "en") {
+    if (h && m) return `${h} hr ${m} min`;
+    if (h) return `${h} hr`;
+    return `${m} min`;
+  }
+  if (h && m) return `${h} jam ${m} mnt`;
+  if (h) return `${h} jam`;
+  return `${m} mnt`;
+}
+
 export function ScheduleGrid({ date, bookings, onSlotClick, t, locale }) {
   const segments = buildSegments(bookings);
   const [tip, setTip] = useState(null);
+  // Render ulang tiap 30 detik supaya status & sisa waktu tetap akurat
+  const [, setTick] = useState(0);
+  useEffect(() => {
+    const id = setInterval(() => setTick((n) => n + 1), 30000);
+    return () => clearInterval(id);
+  }, []);
   const labels = locale === "en" ? TIP_LABELS.en : TIP_LABELS.id;
   // Label untuk slot kosong yang waktunya sudah lewat
   const pastLabel = locale === "en" ? "Past" : "Lewat";
@@ -119,9 +170,12 @@ export function ScheduleGrid({ date, bookings, onSlotClick, t, locale }) {
       12,
       Math.min(e.clientX, window.innerWidth - TIP_WIDTH - 12)
     );
+    const status = getBookingStatus(date, booking);
     setTip({
       booking,
       color,
+      status,
+      remaining: status === "ongoing" ? getOngoingInfo(booking).remaining : null,
       left,
       top: rect.bottom + 6,
       bottom: window.innerHeight - rect.top + 6,
@@ -142,9 +196,13 @@ export function ScheduleGrid({ date, bookings, onSlotClick, t, locale }) {
 
           if (seg.type === "booked") {
             const unitMeta = getUnitMeta(seg.booking.unit);
+            const isOngoing =
+              getBookingStatus(date, seg.booking) === "ongoing";
             return (
               <div
-                className="schedule-row is-booked"
+                className={`schedule-row is-booked${
+                  isOngoing ? " is-ongoing" : ""
+                }`}
                 key={`${seg.startMinutes}-b`}
                 onMouseEnter={(e) => showTip(e, seg.booking, unitMeta?.color)}
                 onMouseLeave={() => setTip(null)}
@@ -154,6 +212,9 @@ export function ScheduleGrid({ date, bookings, onSlotClick, t, locale }) {
                   className="schedule-slot booked"
                   style={{ borderLeftColor: unitMeta?.color }}
                 >
+                  {isOngoing ? (
+                    <span className="status-pulse" aria-hidden="true" />
+                  ) : null}
                   <span className="schedule-slot-label">
                     {truncateWords(seg.booking.purpose) || t.common.booked}
                   </span>
@@ -228,6 +289,31 @@ export function ScheduleGrid({ date, bookings, onSlotClick, t, locale }) {
                   <span className="slot-tooltip-key">{labels.createdBy}</span>
                   <span className="slot-tooltip-val">
                     {tipBooking.createdByName || "Admin"}
+                  </span>
+                </div>
+              ) : null}
+
+              {tip.status ? (
+                <div className="slot-tooltip-row">
+                  <span className="slot-tooltip-key">{labels.status}</span>
+                  <span
+                    className={`slot-tooltip-val slot-tooltip-status is-${tip.status}`}
+                  >
+                    {tip.status === "ongoing" ? (
+                      <span className="status-pulse" aria-hidden="true" />
+                    ) : null}
+                    {tip.status === "ongoing"
+                      ? labels.ongoing
+                      : labels.finished}
+                  </span>
+                </div>
+              ) : null}
+
+              {tip.status === "ongoing" && tip.remaining !== null ? (
+                <div className="slot-tooltip-row">
+                  <span className="slot-tooltip-key">{labels.timeLeft}</span>
+                  <span className="slot-tooltip-val">
+                    {formatRemaining(tip.remaining, locale)}
                   </span>
                 </div>
               ) : null}
@@ -392,6 +478,89 @@ export function ScheduleGrid({ date, bookings, onSlotClick, t, locale }) {
           font-weight: 600;
           color: var(--color-ink);
           word-break: break-word;
+        }
+
+        /* ---------- Baris yang sedang berlangsung (nyala satu grid) ---------- */
+
+        .schedule-row.is-ongoing {
+          background: var(--color-panel);
+          animation: row-glow 1.6s ease-in-out infinite;
+        }
+
+        /* Kedap-kedip abu-abu <-> putih */
+        @keyframes row-glow {
+          0%,
+          100% {
+            background: var(--color-surface);
+          }
+          50% {
+            background: var(--color-panel);
+          }
+        }
+
+        /* Status pesanan di tooltip */
+        .slot-tooltip-status {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+        }
+
+        .slot-tooltip-status.is-ongoing {
+          color: var(--color-success);
+        }
+
+        /* Titik hijau berkedip + gelombang untuk "sedang berlangsung" */
+        .status-pulse {
+          position: relative;
+          display: inline-block;
+          flex-shrink: 0;
+          width: 8px;
+          height: 8px;
+          border-radius: 50%;
+          background: var(--color-success);
+          animation: status-blink 1.4s ease-in-out infinite;
+        }
+
+        .status-pulse::after {
+          content: "";
+          position: absolute;
+          inset: 0;
+          border-radius: 50%;
+          background: var(--color-success);
+          animation: status-ripple 1.4s ease-out infinite;
+        }
+
+        @keyframes status-blink {
+          0%,
+          100% {
+            opacity: 1;
+          }
+          50% {
+            opacity: 0.45;
+          }
+        }
+
+        @keyframes status-ripple {
+          0% {
+            transform: scale(1);
+            opacity: 0.6;
+          }
+          100% {
+            transform: scale(3);
+            opacity: 0;
+          }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+          .status-pulse,
+          .status-pulse::after,
+          .schedule-row.is-ongoing {
+            animation: none;
+          }
+        }
+
+        .slot-tooltip-status.is-finished {
+          color: var(--color-ink-soft);
         }
 
         @media (max-width: 860px) {

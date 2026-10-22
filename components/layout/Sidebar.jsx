@@ -54,7 +54,7 @@ const EXTRA_LABELS = {
     menu: "Menu",
     others: "Lainnya",
     guide: "Panduan",
-    install: "Install Aplikasi",
+    install: "Instal Aplikasi",
   },
 };
 
